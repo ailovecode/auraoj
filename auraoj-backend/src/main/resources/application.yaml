@@ -1,0 +1,23 @@
+spring:
+  application:
+   name: auraoj-backend
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: "040210"
+    url: jdbc:postgresql://localhost:5432/auraoj?currentSchema=public&sslmode=disable&connectTimeout=30
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.zhy.auraojbackend.model.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure: ERROR
