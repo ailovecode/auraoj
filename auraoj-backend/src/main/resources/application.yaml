@@ -4,7 +4,7 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: "040210"
+    password: ${DB_PASSWORD}
     url: jdbc:postgresql://localhost:5432/auraoj?currentSchema=public&sslmode=disable&connectTimeout=30
 
 mybatis-plus:
