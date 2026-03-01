@@ -1,22 +1,188 @@
 package com.zhy.auraojbackend.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.zhy.auraojbackend.model.entity.UserInfo;
-import com.zhy.auraojbackend.service.UserInfoService;
+import com.zhy.auraojbackend.common.ErrorCode;
+import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.mapper.UserInfoMapper;
+import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
+import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
+import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
+import com.zhy.auraojbackend.model.entity.UserInfo;
+import com.zhy.auraojbackend.model.enums.UserRoleEnum;
+import com.zhy.auraojbackend.service.UserInfoService;
+import com.zhy.auraojbackend.utils.PasswordEncoderUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 /**
 * @author DELL
 * @description 针对表【user_info(用户信息表)】的数据库操作Service实现
 * @createDate 2026-02-08 17:00:45
 */
+@Slf4j
 @Service
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
     implements UserInfoService{
 
+    @Override
+    public Long userRegister(UserRegisterRequest userRegisterRequest) {
+        // 参数校验
+        if (userRegisterRequest == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+
+        // 调用请求体自身的校验方法
+        userRegisterRequest.check();
+
+        String username = userRegisterRequest.getUsername();
+        String phone = userRegisterRequest.getPhone();
+        String email = userRegisterRequest.getEmail();
+
+        synchronized (username.intern()) {
+            // 校验用户名是否重复
+            QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("username", username);
+            long count = this.count(queryWrapper);
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.BAD_PARAMS, "用户名已存在");
+            }
+
+            // 插入数据
+            UserInfo userInfo = new UserInfo();
+            // 校验手机号是否重复
+            if (StringUtils.isNotBlank(phone)) {
+                queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("phone", phone);
+                count = this.count(queryWrapper);
+                if (count > 0) {
+                    throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号已被注册");
+                }
+                userInfo.setPhone(phone);
+            }
+
+            // 校验邮箱是否重复
+            if (StringUtils.isNotBlank(email)) {
+                queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("email", email);
+                count = this.count(queryWrapper);
+                if (count > 0) {
+                    throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱已被注册");
+                }
+                userInfo.setEmail(email);
+            }
+
+            // 加密密码
+            String encryptPassword = PasswordEncoderUtil.encode(userRegisterRequest.getPassword());
+            userInfo.setUsername(username);
+            userInfo.setPassword(encryptPassword);
+            userInfo.setGender(userRegisterRequest.getGender());
+            userInfo.setSchool(userRegisterRequest.getSchool());
+            // 判断是否为系统第一个用户，如果是则设置为管理员权限
+            long userCount = this.count();
+            
+            if (userCount == 0) {
+                // 第一个用户，设置为管理员
+                userInfo.setRole(UserRoleEnum.ADMIN);
+                log.info("检测到第一个用户注册，授予管理员权限: {}", username);
+            }
+
+            boolean saveResult = this.save(userInfo);
+            if (!saveResult) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
+            }
+
+            return userInfo.getId();
+        }
+    }
+
+    @Override
+    public UserLoginResponse userLogin(UserLoginRequest userLoginRequest) {
+        // 参数校验
+        if (userLoginRequest == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+
+        // 调用请求体自身的校验方法
+        userLoginRequest.check();
+
+        String username = userLoginRequest.getUsername();
+        String password = userLoginRequest.getPassword();
+
+        // 根据用户名或邮箱查询用户
+        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.and(wrapper -> wrapper.eq("username", username)
+                .or()
+                .eq("phone", username)
+                .or()
+                .eq("email", username));
+        UserInfo userInfo = this.getOne(queryWrapper);
+
+        // 校验用户是否存在
+        if (userInfo == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, "用户不存在");
+        }
+
+        // 校验账号状态
+        if (userInfo.getStatus() != 0) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "账号已被封禁");
+        }
+
+        // 校验密码
+        if (!PasswordEncoderUtil.matches(password, userInfo.getPassword())) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, "密码错误");
+        }
+
+        // 更新最后登录时间
+        this.updateById(userInfo);
+
+        // 使用Sa-Token进行登录
+        StpUtil.login(userInfo.getId());
+
+        // 构造返回信息
+        UserLoginResponse loginResponse = new UserLoginResponse();
+        BeanUtils.copyProperties(userInfo, loginResponse);
+        loginResponse.setLoginTime(new Date());
+        loginResponse.setToken(StpUtil.getTokenValue());
+
+        return loginResponse;
+    }
+
+    @Override
+    public boolean userLogout() {
+        // 检查是否已登录
+        if (!StpUtil.isLogin()) {
+            throw new BusinessException(ErrorCode.NO_LOGIN);
+        }
+
+        // 登出
+        StpUtil.logout();
+        return true;
+    }
+
+    @Override
+    public UserInfo getCurrentUser() {
+        // 检查是否已登录
+        if (!StpUtil.isLogin()) {
+            throw new BusinessException(ErrorCode.NO_LOGIN);
+        }
+
+        // 获取当前用户ID
+        long userId = StpUtil.getLoginIdAsLong();
+        
+        // 查询用户信息
+        UserInfo currentUser = this.getById(userId);
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
+        }
+
+        // 脱敏处理，不返回密码等敏感信息
+        currentUser.setPassword(null);
+        return currentUser;
+    }
 }
-
-
-
-

@@ -1,13 +1,45 @@
 package com.zhy.auraojbackend.service;
 
 import com.zhy.auraojbackend.model.entity.UserInfo;
+import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
+import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
+import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
-* @author DELL
+* @author zhy
 * @description 针对表【user_info(用户信息表)】的数据库操作Service
 * @createDate 2026-02-08 17:00:45
 */
 public interface UserInfoService extends IService<UserInfo> {
 
+    /**
+     * 用户注册
+     *
+     * @param userRegisterRequest 注册请求参数
+     * @return 用户ID
+     */
+    Long userRegister(UserRegisterRequest userRegisterRequest);
+
+    /**
+     * 用户登录
+     *
+     * @param userLoginRequest 登录请求参数
+     * @return 登录响应信息
+     */
+    UserLoginResponse userLogin(UserLoginRequest userLoginRequest);
+
+    /**
+     * 用户登出
+     *
+     * @return 是否登出成功
+     */
+    boolean userLogout();
+
+    /**
+     * 获取当前登录用户信息
+     *
+     * @return 当前用户信息
+     */
+    UserInfo getCurrentUser();
 }

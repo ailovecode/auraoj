@@ -1,15 +1,15 @@
 package com.zhy.auraojbackend.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
+import com.baomidou.mybatisplus.annotation.*;
+import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 用户信息表
+ * @author zhy
  * @TableName user_info
  */
 @TableName("public.user_info")
@@ -19,7 +19,7 @@ public class UserInfo {
     /**
      * 主键，自增ID
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -65,7 +65,7 @@ public class UserInfo {
     /**
      * 角色权限：student/teacher/admin
      */
-    private Object role;
+    private UserRoleEnum role;
 
     /**
      * 用户等级，默认1
@@ -85,12 +85,14 @@ public class UserInfo {
     /**
      * 创建时间
      */
-    private Date gmtCreate;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime gmtCreate;
 
     /**
      * 最后修改时间
      */
-    private Date gmtModified;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime gmtModified;
 
     @Override
     public boolean equals(Object that) {
