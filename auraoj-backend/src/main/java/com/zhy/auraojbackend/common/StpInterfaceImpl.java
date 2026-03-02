@@ -32,7 +32,7 @@ public class StpInterfaceImpl implements StpInterface {
         QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.and(wrapper -> wrapper.eq("id", loginId));
         UserInfo userInfo = userInfoService.getOne(queryWrapper);
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         if (userInfo != null) {
             if (userInfo.getRole() == UserRoleEnum.ADMIN) {
                 list.add(UserRoleEnum.ADMIN.getValue());

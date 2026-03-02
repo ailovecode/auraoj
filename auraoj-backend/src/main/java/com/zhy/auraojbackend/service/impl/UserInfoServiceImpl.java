@@ -19,9 +19,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
-* @author DELL
+* @author zhy
 * @description 针对表【user_info(用户信息表)】的数据库操作Service实现
 * @createDate 2026-02-08 17:00:45
 */
@@ -29,6 +31,7 @@ import java.util.Date;
 @Service
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
     implements UserInfoService{
+    private final ConcurrentMap<String, Object> userLocks = new ConcurrentHashMap<>();
 
     @Override
     public Long userRegister(UserRegisterRequest userRegisterRequest) {
@@ -44,7 +47,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         String phone = userRegisterRequest.getPhone();
         String email = userRegisterRequest.getEmail();
 
-        synchronized (username.intern()) {
+        Object lock = userLocks.computeIfAbsent(username, k -> new Object());
+        synchronized (lock) {
             // 校验用户名是否重复
             QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("username", username);

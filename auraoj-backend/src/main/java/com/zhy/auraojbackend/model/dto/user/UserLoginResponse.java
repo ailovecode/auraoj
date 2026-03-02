@@ -3,6 +3,7 @@ package com.zhy.auraojbackend.model.dto.user;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -15,6 +16,7 @@ import java.util.Date;
 @Data
 public class UserLoginResponse implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
