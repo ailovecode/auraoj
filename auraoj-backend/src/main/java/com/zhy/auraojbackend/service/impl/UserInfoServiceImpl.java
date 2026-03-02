@@ -9,6 +9,7 @@ import com.zhy.auraojbackend.mapper.UserInfoMapper;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import com.zhy.auraojbackend.service.UserInfoService;
@@ -188,5 +189,87 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         // 脱敏处理，不返回密码等敏感信息
         currentUser.setPassword(null);
         return currentUser;
+    }
+
+    @Override
+    public boolean updateCurrentUser(UserUpdateRequest userUpdateRequest) {
+        // 检查是否已登录
+        if (!StpUtil.isLogin()) {
+            throw new BusinessException(ErrorCode.NO_LOGIN);
+        }
+
+        // 参数校验
+        if (userUpdateRequest == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+
+        // 调用请求体自身的校验方法
+        userUpdateRequest.check();
+
+        // 获取当前用户ID
+        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest);
+
+        // 使用MyBatis-Plus的updateById方法更新
+        boolean updateResult = this.updateById(updateUserInfo);
+
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户信息失败");
+        }
+
+        return true;
+    }
+
+    private UserInfo getUpdateUserInfo(UserUpdateRequest userUpdateRequest) {
+        long userId = StpUtil.getLoginIdAsLong();
+
+        // 构造更新条件
+        UserInfo updateUserInfo = new UserInfo();
+        updateUserInfo.setId(userId);
+
+        // 设置需要更新的字段（只设置非null字段）
+        if (userUpdateRequest.getAvatar() != null) {
+            updateUserInfo.setAvatar(userUpdateRequest.getAvatar());
+        }
+        if (userUpdateRequest.getGender() != null) {
+            updateUserInfo.setGender(userUpdateRequest.getGender());
+        }
+        if (userUpdateRequest.getSchool() != null) {
+            updateUserInfo.setSchool(userUpdateRequest.getSchool());
+        }
+        if (userUpdateRequest.getSignature() != null) {
+            updateUserInfo.setSignature(userUpdateRequest.getSignature());
+        }
+        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+        if (StringUtils.isNotBlank(userUpdateRequest.getUsername())) {
+            // 校验用户名是否重复
+            queryWrapper.eq("username", userUpdateRequest.getUsername());
+            long count = this.count(queryWrapper);
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.BAD_PARAMS, "用户名已存在！");
+            }
+            updateUserInfo.setUsername(userUpdateRequest.getUsername());
+        }
+        // 校验手机号是否重复
+        if (StringUtils.isNotBlank(userUpdateRequest.getPhone())) {
+            queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("phone", userUpdateRequest.getPhone());
+            long count = this.count(queryWrapper);
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号已被绑定！");
+            }
+            updateUserInfo.setPhone(userUpdateRequest.getPhone());
+        }
+
+        // 校验邮箱是否重复
+        if (StringUtils.isNotBlank(userUpdateRequest.getEmail())) {
+            queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("email", userUpdateRequest.getEmail());
+            long count = this.count(queryWrapper);
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱已被绑定！");
+            }
+            updateUserInfo.setEmail(userUpdateRequest.getEmail());
+        }
+        return updateUserInfo;
     }
 }

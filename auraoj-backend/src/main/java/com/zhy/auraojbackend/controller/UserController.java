@@ -8,6 +8,7 @@ import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.service.UserInfoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -103,6 +104,25 @@ public class UserController {
             return Result.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("获取当前用户异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @PostMapping("/update")
+    @Operation(summary = "更新当前用户信息", description = "更新当前登录用户的基本信息")
+    @ApiResponse(responseCode = "200", description = "更新成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckLogin
+    public Result<Boolean> updateCurrentUser(
+            @Parameter(description = "用户信息更新参数") @RequestBody UserUpdateRequest userUpdateRequest,
+            HttpServletRequest request) {
+        try {
+            boolean result = userInfoService.updateCurrentUser(userUpdateRequest);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("更新用户信息异常", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

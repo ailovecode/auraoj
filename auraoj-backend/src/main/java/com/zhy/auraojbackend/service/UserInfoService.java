@@ -4,6 +4,7 @@ import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -42,4 +43,12 @@ public interface UserInfoService extends IService<UserInfo> {
      * @return 当前用户信息
      */
     UserInfo getCurrentUser();
+
+    /**
+     * 更新当前登录用户信息
+     *
+     * @param userUpdateRequest 更新请求参数
+     * @return 是否更新成功
+     */
+    boolean updateCurrentUser(UserUpdateRequest userUpdateRequest);
 }
