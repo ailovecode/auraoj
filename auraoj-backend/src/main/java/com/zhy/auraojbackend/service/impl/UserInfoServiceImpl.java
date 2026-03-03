@@ -1,7 +1,7 @@
 package com.zhy.auraojbackend.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.exception.BusinessException;
@@ -51,8 +51,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         Object lock = userLocks.computeIfAbsent(username, k -> new Object());
         synchronized (lock) {
             // 校验用户名是否重复
-            QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("username", username);
+            LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(UserInfo::getUsername, username);
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "用户名已存在");
@@ -62,8 +62,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
             UserInfo userInfo = new UserInfo();
             // 校验手机号是否重复
             if (StringUtils.isNotBlank(phone)) {
-                queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("phone", phone);
+                queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(UserInfo::getPhone, phone);
                 count = this.count(queryWrapper);
                 if (count > 0) {
                     throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号已被注册");
@@ -73,8 +73,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
 
             // 校验邮箱是否重复
             if (StringUtils.isNotBlank(email)) {
-                queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("email", email);
+                queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(UserInfo::getEmail, email);
                 count = this.count(queryWrapper);
                 if (count > 0) {
                     throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱已被注册");
@@ -120,12 +120,12 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         String password = userLoginRequest.getPassword();
 
         // 根据用户名或邮箱查询用户
-        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.and(wrapper -> wrapper.eq("username", username)
+        LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.and(wrapper -> wrapper.eq(UserInfo::getUsername, username)
                 .or()
-                .eq("phone", username)
+                .eq(UserInfo::getPhone, username)
                 .or()
-                .eq("email", username));
+                .eq(UserInfo::getEmail, username));
         UserInfo userInfo = this.getOne(queryWrapper);
 
         // 校验用户是否存在
@@ -197,21 +197,16 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         if (!StpUtil.isLogin()) {
             throw new BusinessException(ErrorCode.NO_LOGIN);
         }
-
         // 参数校验
         if (userUpdateRequest == null) {
             throw new BusinessException(ErrorCode.BAD_PARAMS);
         }
-
         // 调用请求体自身的校验方法
         userUpdateRequest.check();
-
         // 获取当前用户ID
-        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest);
-
+        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest, null);
         // 使用MyBatis-Plus的updateById方法更新
         boolean updateResult = this.updateById(updateUserInfo);
-
         if (!updateResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户信息失败");
         }
@@ -219,30 +214,67 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         return true;
     }
 
-    private UserInfo getUpdateUserInfo(UserUpdateRequest userUpdateRequest) {
-        long userId = StpUtil.getLoginIdAsLong();
+    @Override
+    public boolean adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest) {
+        // 检查是否已登录
+        if (!StpUtil.isLogin()) {
+            throw new BusinessException(ErrorCode.NO_LOGIN);
+        }
+        // 参数校验
+        if (userUpdateRequest == null || userId == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+
+        // 调用请求体自身的校验方法
+        userUpdateRequest.check();
+        UserInfo userInfo = this.getById(userId);
+        if (userInfo == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
+        }
+        if (!StpUtil.hasRole(UserRoleEnum.ADMIN.getValue())
+                && UserRoleEnum.TEACHER.getLabel() <= userInfo.getRole().getLabel()) {
+            log.warn("当前用户角色为 {} ,没有权限", UserRoleEnum.TEACHER.getDescription());
+            throw new BusinessException(ErrorCode.NO_AUTHORITY_ALTER, "没有权限修改当前用户信息！");
+        }
+
+        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest, userId);
+        boolean updateResult = this.updateById(updateUserInfo);
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户信息失败");
+        }
+
+        return true;
+    }
+
+    private UserInfo getUpdateUserInfo(UserUpdateRequest userUpdateRequest, Long userId) {
+        if (userId == null) {
+            userId = StpUtil.getLoginIdAsLong();
+        }
 
         // 构造更新条件
         UserInfo updateUserInfo = new UserInfo();
         updateUserInfo.setId(userId);
 
         // 设置需要更新的字段（只设置非null字段）
-        if (userUpdateRequest.getAvatar() != null) {
+        if (StringUtils.isNotBlank(userUpdateRequest.getAvatar())) {
             updateUserInfo.setAvatar(userUpdateRequest.getAvatar());
         }
         if (userUpdateRequest.getGender() != null) {
             updateUserInfo.setGender(userUpdateRequest.getGender());
         }
-        if (userUpdateRequest.getSchool() != null) {
+        if (StringUtils.isNotBlank(userUpdateRequest.getSchool())) {
             updateUserInfo.setSchool(userUpdateRequest.getSchool());
         }
-        if (userUpdateRequest.getSignature() != null) {
+        if (StringUtils.isNotBlank(userUpdateRequest.getSignature())) {
             updateUserInfo.setSignature(userUpdateRequest.getSignature());
         }
-        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+        if (StringUtils.isNotBlank(userUpdateRequest.getPassword())) {
+            updateUserInfo.setPassword(PasswordEncoderUtil.encode(userUpdateRequest.getPassword()));
+        }
+        LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotBlank(userUpdateRequest.getUsername())) {
             // 校验用户名是否重复
-            queryWrapper.eq("username", userUpdateRequest.getUsername());
+            queryWrapper.eq(UserInfo::getUsername, userUpdateRequest.getUsername());
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "用户名已存在！");
@@ -251,8 +283,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         }
         // 校验手机号是否重复
         if (StringUtils.isNotBlank(userUpdateRequest.getPhone())) {
-            queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("phone", userUpdateRequest.getPhone());
+            queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(UserInfo::getPhone, userUpdateRequest.getPhone());
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号已被绑定！");
@@ -262,8 +294,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
 
         // 校验邮箱是否重复
         if (StringUtils.isNotBlank(userUpdateRequest.getEmail())) {
-            queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("email", userUpdateRequest.getEmail());
+            queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(UserInfo::getEmail, userUpdateRequest.getEmail());
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱已被绑定！");

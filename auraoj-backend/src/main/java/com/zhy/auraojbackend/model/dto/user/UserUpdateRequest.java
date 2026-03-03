@@ -42,6 +42,20 @@ public class UserUpdateRequest implements Serializable, AbstractCheckRequest {
     @Size(max = 100, message = "邮箱地址长度不能超过 100 个字符")
     @Schema(description = "邮箱地址", example = "example@email.com")
     private String email;
+
+    /**
+     * 密码
+     */
+    @Size(min = 6, max = 20, message = "密码长度应为 6-20 位")
+    @Schema(description = "密码", example = "123456")
+    private String password;
+
+    /**
+     * 确认密码
+     */
+    @Size(min = 6, max = 20, message = "密码长度应为 6-20 位")
+    @Schema(description = "确认密码", example = "123456")
+    private String confirmPassword;
     
     /**
      * 头像URL 地址
@@ -87,6 +101,12 @@ public class UserUpdateRequest implements Serializable, AbstractCheckRequest {
         // 校验邮箱格式（如果提供了邮箱）
         if (StringUtils.isNotBlank(email) && !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
             throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱格式不正确");
+        }
+
+        // 校验两次输入的密码是否一致
+        if (StringUtils.isNotBlank(password) && StringUtils.isNotBlank(confirmPassword)
+                && !password.equals(confirmPassword)) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, "两次输入的密码不一致");
         }
     
         // 校验 URL 格式（如果提供了头像URL）

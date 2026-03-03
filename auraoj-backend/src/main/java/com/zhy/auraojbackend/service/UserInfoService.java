@@ -51,4 +51,13 @@ public interface UserInfoService extends IService<UserInfo> {
      * @return 是否更新成功
      */
     boolean updateCurrentUser(UserUpdateRequest userUpdateRequest);
+
+    /**
+     * 管理员更新用户信息
+     *
+     * @param userId            用户ID
+     * @param userUpdateRequest 更新请求参数
+     * @return 是否更新成功
+     */
+    boolean adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest);
 }

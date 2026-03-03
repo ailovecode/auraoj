@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @version 1.0
@@ -15,27 +14,30 @@ import java.util.stream.Collectors;
  */
 public enum UserRoleEnum {
 
-    STUDENT("student", "学生"),
-    TEACHER("teacher", "教师"),
-    ADMIN("admin", "管理员");
+    STUDENT("student", "学生", 1),
+    TEACHER("teacher", "教师", 2),
+    ADMIN("admin", "管理员", 3);
 
     @EnumValue
     @JsonValue
     private final String value;
     private final String description;
+    private final Integer label;
 
-    UserRoleEnum(String value, String description) {
+    UserRoleEnum(String value, String description, Integer label) {
         this.value = value;
         this.description = description;
+        this.label = label;
     }
 
     /**
      * 获取枚举值列表
-     *
-     * @return 枚举值列表
      */
+    private static final List<String> VALUES = Arrays.stream(values())
+            .map(item -> item.value)
+            .toList();
     public static List<String> getValues() {
-        return Arrays.stream(values()).map(item -> item.value).collect(Collectors.toList());
+        return VALUES;
     }
 
     /**
@@ -63,5 +65,9 @@ public enum UserRoleEnum {
 
     public String getDescription() {
         return description;
+    }
+
+    public Integer getLabel() {
+        return label;
     }
 }

@@ -1,9 +1,8 @@
 package com.zhy.auraojbackend.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaIgnore;
-import com.zhy.auraojbackend.common.Result;
+import cn.dev33.satoken.annotation.*;
 import com.zhy.auraojbackend.common.ErrorCode;
+import com.zhy.auraojbackend.common.Result;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
@@ -118,6 +117,26 @@ public class UserController {
             HttpServletRequest request) {
         try {
             boolean result = userInfoService.updateCurrentUser(userUpdateRequest);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("更新用户信息异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @PostMapping("/admin/{userId}/update")
+    @Operation(summary = "管理员更新指定用户信息", description = "更新指定用户的基本信息")
+    @ApiResponse(responseCode = "200", description = "更新成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
+    public Result<Boolean> updateCurrentUser(
+            @Parameter(description = "目标用户 ID", required = true) @PathVariable Long userId,
+            @Parameter(description = "用户信息更新参数") @RequestBody UserUpdateRequest userUpdateRequest,
+            HttpServletRequest request) {
+        try {
+            boolean result = userInfoService.adminUpdateUser(userId, userUpdateRequest);
             return Result.success(result);
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());

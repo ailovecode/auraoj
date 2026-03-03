@@ -21,6 +21,7 @@ public enum ErrorCode {
 
     // 403xx: 授权类
     ACCESS_DENIED(40300, "无权访问该资源"),
+    NO_AUTHORITY_ALTER(40301, "无权修改该资源"),
 
     // 404xx: 资源类
     RESOURCE_NOT_FOUND(40400, "资源不存在"),

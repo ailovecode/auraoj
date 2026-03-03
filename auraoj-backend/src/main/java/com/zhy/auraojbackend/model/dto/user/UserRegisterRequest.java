@@ -77,7 +77,7 @@ public class UserRegisterRequest implements Serializable, AbstractCheckRequest {
         }
 
         // 校验手机号格式
-        if (StringUtils.isNotBlank(phone) && !phone.matches("^[1][3-9]\\d{9}$")) {
+        if (StringUtils.isNotBlank(phone) && !phone.matches("^1[3-9]\\d{9}$")) {
             throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号格式错误");
         }
 
