@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
+import { userLogin } from '@/api/user'
 import { Modal, Form, Input, Button, Message } from '@arco-design/web-vue'
 import { IconUser, IconLock } from '@arco-design/web-vue/es/icon'
 
@@ -17,6 +18,7 @@ const emit = defineEmits<Emits>()
 
 const userStore = useUserStore()
 const formRef = ref()
+const loading = ref(false)
 const formData = ref({
   username: '',
   password: ''
@@ -30,12 +32,32 @@ const rules = {
 const handleOk = async () => {
   try {
     await formRef.value.validate()
-    userStore.setToken('mock-token-' + Date.now())
-    Message.success('登录成功')
-    emit('update:visible', false)
-    formData.value = { username: '', password: '' }
-  } catch {
-    Message.error('请填写完整信息')
+    loading.value = true
+    
+    const res = await userLogin({
+      username: formData.value.username,
+      password: formData.value.password
+    })
+    
+    if (res.code === 200) {
+      userStore.setToken(res.data.token)
+      userStore.setUserInfo(res.data)
+      Message.success('登录成功')
+      emit('update:visible', false)
+      formData.value = { username: '', password: '' }
+    } else {
+      Message.error(res.message || '登录失败')
+    }
+  } catch (error: any) {
+    if (error?.response?.data?.message) {
+      Message.error(error.response.data.message)
+    } else if (error?.message) {
+      Message.error(error.message)
+    } else {
+      Message.error('登录失败，请稍后重试')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -56,6 +78,8 @@ const handleRegister = () => {
     @ok="handleOk"
     @cancel="handleCancel"
     :footer="false"
+    :closable="false"
+    :mask-closable="false"
   >
     <Form ref="formRef" :model="formData" :rules="rules">
       <FormItem field="username">
@@ -73,10 +97,11 @@ const handleRegister = () => {
           placeholder="请输入密码"
           :prefix-icon="IconLock"
           size="large"
+          @press-enter="handleOk"
         />
       </FormItem>
       <div style="margin-top: 24px">
-        <Button type="primary" long size="large" @click="handleOk">
+        <Button type="primary" long size="large" :loading="loading" @click="handleOk">
           登录
         </Button>
         <div style="text-align: center; margin-top: 16px">

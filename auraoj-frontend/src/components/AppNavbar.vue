@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { userLogout } from '@/api/user'
 import {
   Message,
   Menu,
@@ -17,7 +18,8 @@ import {
   IconUser,
   IconNotification,
   IconApps,
-  IconExport
+  IconExport,
+  IconSettings
 } from '@arco-design/web-vue/es/icon'
 import LoginModal from './LoginModal.vue'
 
@@ -27,17 +29,36 @@ const userStore = useUserStore()
 
 const loginModalVisible = ref(false)
 const isLoggedIn = computed(() => !!userStore.token)
+const isLoggingOut = ref(false)
+const canAccessAdmin = computed(() => {
+  const role = userStore.userInfo?.role
+  return role === 'admin' || role === 'teacher'
+})
 
 // 菜单点击跳转
 const handleMenuClick = (key: string) => {
   router.push(key)
 }
 
-const handleSelect = (value: any) => {
+const handleSelect = async (value: any) => {
   if (value === 'logout') {
-    userStore.logout()
-    Message.success('已安全退出')
-    router.push('/')
+    isLoggingOut.value = true
+    try {
+      const res = await userLogout()
+      if (res.code === 200) {
+        userStore.logout()
+        Message.success('已安全退出')
+        router.push('/')
+      } else {
+        Message.error(res.message || '退出失败')
+      }
+    } catch (error: any) {
+      Message.error(error.message || '退出失败')
+    } finally {
+      isLoggingOut.value = false
+    }
+  } else if (value === 'admin') {
+    router.push('/admin')
   } else {
     router.push(`/${value}`)
   }
@@ -49,9 +70,6 @@ const handleSelect = (value: any) => {
     <div class="navbar-content">
       <div class="left-side menu-side">
         <div class="logo-area" @click="router.push('/')">
-          <!-- <img
-            src="https://p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/a8c30940745199a742a17058ad523a8b.png~tplv-uwbnlip3yd-webp.webp"
-            alt="logo" /> -->
           <span class="logo-text">AuraOJ</span>
         </div>
         <Menu mode="horizontal" :selected-keys="[route.path]" @menu-item-click="handleMenuClick" :border="false"
@@ -96,8 +114,14 @@ const handleSelect = (value: any) => {
                   </template>
                   我的提交记录
                 </Doption>
+                <Doption v-if="canAccessAdmin" value="admin">
+                  <template #icon>
+                    <IconSettings />
+                  </template>
+                  管理后台
+                </Doption>
                 <hr style="border: none; border-top: 1px solid var(--color-fill-3); margin: 4px 0;" />
-                <Doption value="logout" class="logout-option">
+                <Doption value="logout" class="logout-option" :disabled="isLoggingOut">
                   <template #icon>
                     <IconExport />
                   </template>
@@ -129,7 +153,6 @@ const handleSelect = (value: any) => {
   height: 60px;
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
-  /* 磨砂玻璃效果 */
   border-bottom: 1px solid var(--color-border-2);
 }
 
@@ -157,7 +180,6 @@ const handleSelect = (value: any) => {
 
 .menu-side {
   flex: 1;
-  /* 占据剩余空间，让菜单向后排列 */
 }
 
 .logo-area img {

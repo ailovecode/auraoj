@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-
-interface UserInfo {
-  id?: number
-  username?: string
-  avatar?: string
-}
+import { ref, computed } from 'vue'
+import type { UserInfo } from '@/types/user'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
@@ -16,16 +11,42 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('token', newToken)
   }
 
+  const setUserInfo = (info: UserInfo) => {
+    userInfo.value = info
+    localStorage.setItem('userInfo', JSON.stringify(info))
+  }
+
+  const isAdmin = computed(() => {
+    const role = userInfo.value?.role
+    return role === 'admin' || role === 'teacher'
+  })
+
   const logout = () => {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
   }
+
+  const initUserInfo = () => {
+    const stored = localStorage.getItem('userInfo')
+    if (stored) {
+      try {
+        userInfo.value = JSON.parse(stored)
+      } catch {
+        userInfo.value = null
+      }
+    }
+  }
+
+  initUserInfo()
 
   return {
     token,
     userInfo,
     setToken,
+    setUserInfo,
+    isAdmin,
     logout
   }
 })

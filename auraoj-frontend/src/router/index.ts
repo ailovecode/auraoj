@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/store/user'
+import { Message } from '@arco-design/web-vue'
 import MainLayout from '@/layouts/MainLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomeViews from '@/views/home/HomeViews.vue'
 
 const router = createRouter({
@@ -43,8 +46,71 @@ const router = createRouter({
           }
         }
       ]
+    },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      redirect: '/admin/dashboard',
+      children: [
+        {
+          path: 'dashboard',
+          name: 'adminDashboard',
+          component: () => import('@/views/admin/Dashboard.vue')
+        },
+        {
+          path: 'user',
+          name: 'adminUser',
+          component: () => import('@/views/admin/UserManage.vue')
+        },
+        {
+          path: 'problem',
+          name: 'adminProblem',
+          component: {
+            template: '<div class="placeholder-page"><h1>题目管理</h1></div>'
+          }
+        },
+        {
+          path: 'submission',
+          name: 'adminSubmission',
+          component: {
+            template: '<div class="placeholder-page"><h1>提交记录</h1></div>'
+          }
+        },
+        {
+          path: 'contest',
+          name: 'adminContest',
+          component: {
+            template: '<div class="placeholder-page"><h1>比赛管理</h1></div>'
+          }
+        },
+        {
+          path: 'settings',
+          name: 'adminSettings',
+          component: {
+            template: '<div class="placeholder-page"><h1>系统设置</h1></div>'
+          }
+        }
+      ]
     }
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+
+  if (to.path.startsWith('/admin')) {
+    const role = userStore.userInfo?.role
+    const isAdmin = role === 'admin' || role === 'teacher'
+
+    if (!isAdmin) {
+      Message.warning('您没有权限访问管理后台')
+      next('/')
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
 })
 
 export default router
