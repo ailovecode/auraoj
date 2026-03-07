@@ -1,9 +1,7 @@
 package com.zhy.auraojbackend.mapper;
 
-import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import com.zhy.auraojbackend.model.entity.UserInfo;
 
 /**
 * @author zhy
@@ -13,8 +11,6 @@ import org.apache.ibatis.annotations.Select;
 */
 public interface UserInfoMapper extends BaseMapper<UserInfo> {
 
-    @Select("select * from public.user_info where username = #{username}")
-    UserInfo findUser(@Param("username") String username);
 }
 
 

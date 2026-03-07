@@ -5,7 +5,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: ${DB_PASSWORD}
-    url: jdbc:postgresql://localhost:5432/auraoj?currentSchema=public&sslmode=disable&connectTimeout=30
+    url: jdbc:postgresql://localhost:5432/auraoj?stringtype=unspecified&currentSchema=public&sslmode=disable&connectTimeout=30
 
   mvc:
     static-path-pattern: /**
