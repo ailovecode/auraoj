@@ -6,12 +6,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.mapper.UserInfoMapper;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
+import com.zhy.auraojbackend.model.vo.UserInfoVO;
 import com.zhy.auraojbackend.service.UserInfoService;
 import com.zhy.auraojbackend.utils.PasswordEncoderUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +22,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -49,6 +54,11 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         String email = userRegisterRequest.getEmail();
 
         Object lock = userLocks.computeIfAbsent(username, k -> new Object());
+        /**
+         * todo:
+         * 限制用户更改的时间一个月一次
+         * 如果是被删除的用户，重新注册是恢复还是重新注册
+         */
         synchronized (lock) {
             // 校验用户名是否重复
             LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
@@ -135,7 +145,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
 
         // 校验账号状态
         if (userInfo.getStatus() != 0) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "账号已被封禁");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "账号不存在或者已被封禁，请联系管理员或重新注册");
         }
 
         // 校验密码
@@ -275,6 +285,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         if (StringUtils.isNotBlank(userUpdateRequest.getUsername())) {
             // 校验用户名是否重复
             queryWrapper.eq(UserInfo::getUsername, userUpdateRequest.getUsername());
+            queryWrapper.ne(UserInfo::getId, userId);
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "用户名已存在！");
@@ -285,6 +296,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         if (StringUtils.isNotBlank(userUpdateRequest.getPhone())) {
             queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(UserInfo::getPhone, userUpdateRequest.getPhone());
+            queryWrapper.ne(UserInfo::getId, userId);
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "手机号已被绑定！");
@@ -296,6 +308,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         if (StringUtils.isNotBlank(userUpdateRequest.getEmail())) {
             queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(UserInfo::getEmail, userUpdateRequest.getEmail());
+            queryWrapper.ne(UserInfo::getId, userId);
             long count = this.count(queryWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.BAD_PARAMS, "邮箱已被绑定！");
@@ -303,5 +316,86 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
             updateUserInfo.setEmail(userUpdateRequest.getEmail());
         }
         return updateUserInfo;
+    }
+
+    @Override
+    public PageResponse<UserInfoVO> getAllUsers(PageRequest pageRequest) {
+        // 参数校验和默认值设置
+        if (pageRequest == null) {
+            pageRequest = new PageRequest();
+        }
+        
+        int pageNum = pageRequest.getPageNum() != null ? pageRequest.getPageNum() : 1;
+        int pageSize = pageRequest.getPageSize() != null ? pageRequest.getPageSize() : 10;
+        
+        // 确保页码和每页大小合法
+        pageNum = Math.max(1, pageNum);
+        pageSize = Math.clamp(pageSize, 1, 100);
+        
+        // 查询总记录数
+        LambdaQueryWrapper<UserInfo> countWrapper = new LambdaQueryWrapper<>();
+        Long total = this.count(countWrapper);
+        
+        // 分页查询用户信息，按 ID 升序
+        LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByAsc(UserInfo::getId);
+        
+        // 计算偏移量和限制
+        int offset = (pageNum - 1) * pageSize;
+        queryWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
+        
+        List<UserInfo> userList = this.list(queryWrapper);
+        
+        // 转换为 VO 对象（UserInfoVO 本身就不包含 password 字段）
+        List<UserInfoVO> userInfoVOList = new ArrayList<>(userList.size());
+        for (UserInfo userInfo : userList) {
+            UserInfoVO userInfoVO = new UserInfoVO();
+            BeanUtils.copyProperties(userInfo, userInfoVO);
+            userInfoVOList.add(userInfoVO);
+        }
+        
+        // 构建分页响应
+        return new PageResponse<>(pageNum, pageSize, total, userInfoVOList);
+    }
+
+    @Override
+    public boolean deleteUser(Long userId) {
+        // 参数校验
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+        
+        // 查询用户是否存在
+        UserInfo userInfo = this.getById(userId);
+        if (userInfo == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
+        }
+        
+        // 检查当前登录用户是否有权限删除该用户
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        if (!currentUserId.equals(userId)) {
+            // 如果不是删除自己，需要检查权限
+            UserInfo currentUser = this.getById(currentUserId);
+            if (currentUser == null) {
+                throw new BusinessException(ErrorCode.NO_LOGIN);
+            }
+            // 不能删除比自己权限高或者同级别的用户
+            if (!StpUtil.hasRole(UserRoleEnum.ADMIN.getValue())
+                    && UserRoleEnum.TEACHER.getLabel() <= userInfo.getRole().getLabel()) {
+                log.warn("当前用户角色为 {}, 没有权限删除其他用户", UserRoleEnum.TEACHER.getDescription());
+                throw new BusinessException(ErrorCode.NO_AUTHORITY_ALTER, "没有权限删除当前用户信息！");
+            }
+        }
+        
+        // 软删除：将状态设置为 1（封禁）
+        userInfo.setStatus(1);
+        boolean updateResult = this.updateById(userInfo);
+        
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除用户失败");
+        }
+        
+        log.info("用户已被软删除：userId={}, username={}", userId, userInfo.getUsername());
+        return true;
     }
 }

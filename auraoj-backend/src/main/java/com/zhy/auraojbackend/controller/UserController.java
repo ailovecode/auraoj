@@ -9,6 +9,9 @@ import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
+import com.zhy.auraojbackend.model.vo.UserInfoVO;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.service.UserInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +23,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
 
 /**
  * @version 1.0
@@ -142,6 +146,49 @@ public class UserController {
             return Result.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("更新用户信息异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/list")
+    @Operation(summary = "获取所有用户信息（分页）", description = "管理员和教师分页获取系统中所有用户的信息列表")
+    @ApiResponse(responseCode = "200", description = "获取成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
+    public Result<PageResponse<UserInfoVO>> getAllUsers(
+            @Parameter(description = "页码，默认 1") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小，默认 10") @RequestParam(defaultValue = "10") Integer pageSize,
+            HttpServletRequest request) {
+        try {
+            PageRequest pageRequest = new PageRequest();
+            pageRequest.setPageNum(pageNum);
+            pageRequest.setPageSize(pageSize);
+            
+            PageResponse<UserInfoVO> result = userInfoService.getAllUsers(pageRequest);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("获取所有用户异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @DeleteMapping("/admin/{userId}/deleteUser")
+    @Operation(summary = "删除用户", description = "管理员删除指定用户（软删除，将状态设置为封禁）")
+    @ApiResponse(responseCode = "200", description = "删除成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
+    public Result<Boolean> deleteUser(
+            @Parameter(description = "目标用户 ID", required = true) @PathVariable Long userId,
+            HttpServletRequest request) {
+        try {
+            boolean result = userInfoService.deleteUser(userId);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("删除用户异常", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

@@ -5,6 +5,9 @@ import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
+import com.zhy.auraojbackend.model.vo.UserInfoVO;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -55,9 +58,25 @@ public interface UserInfoService extends IService<UserInfo> {
     /**
      * 管理员更新用户信息
      *
-     * @param userId            用户ID
+     * @param userId            用户 ID
      * @param userUpdateRequest 更新请求参数
      * @return 是否更新成功
      */
     boolean adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest);
+
+    /**
+     * 获取所有用户信息（管理员和教师权限，分页）
+     *
+     * @param pageRequest 分页请求参数
+     * @return 分页后的用户信息列表
+     */
+    PageResponse<UserInfoVO> getAllUsers(PageRequest pageRequest);
+
+    /**
+     * 删除用户（软删除，将状态设置为封禁）
+     *
+     * @param userId 用户 ID
+     * @return 是否删除成功
+     */
+    boolean deleteUser(Long userId);
 }
