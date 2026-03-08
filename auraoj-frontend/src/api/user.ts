@@ -14,6 +14,20 @@ export interface UserLogoutRes {
   message: string
 }
 
+export interface UserRegisterParams {
+  username?: string
+  password?: string
+  confirmPassword?: string
+  gender?: number
+  school?: string
+}
+
+export interface UserRegisterRes {
+  code: number
+  data: Record<string, unknown>
+  message: string
+}
+
 export function userLogin(params: LoginParams): Promise<LoginResponse> {
   return request.post('/user/login', params)
 }
@@ -24,6 +38,10 @@ export function getUserInfo(): Promise<LoginResponse> {
 
 export function userLogout(): Promise<UserLogoutRes> {
   return request.post('/user/logout')
+}
+
+export function userRegister(params: UserRegisterParams): Promise<UserRegisterRes> {
+  return request.post('/user/register', params)
 }
 
 export function getAllUsers(pageNum: number, pageSize: number): Promise<GetAllUsersRes> {

@@ -49,6 +49,10 @@ const handleSelect = async (value: any) => {
         userStore.logout()
         Message.success('已安全退出')
         router.push('/')
+      } else if (res.code === 40100) {
+        userStore.logout()
+        Message.success('已安全退出')
+        router.push('/')
       } else {
         Message.error(res.message || '退出失败')
       }
