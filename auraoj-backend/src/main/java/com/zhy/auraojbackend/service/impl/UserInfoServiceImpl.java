@@ -56,7 +56,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         Object lock = userLocks.computeIfAbsent(username, k -> new Object());
         /**
          * todo:
-         * 限制用户更改的时间一个月一次
+         * 限制用户名更改的时间一个月一次
          * 如果是被删除的用户，重新注册是恢复还是重新注册
          */
         synchronized (lock) {

@@ -62,3 +62,12 @@ knife4j:
   basic:
     enable: false # 如果不需要账号密码认证，设为 false
 
+# minio 配置
+
+
+minio:
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_AK}
+  access-secret: ${MINIO_SK}
+  bucket-name: auraoj
+  secure: false

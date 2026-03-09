@@ -36,8 +36,13 @@ public enum ErrorCode {
     // 502xx: 业务特定类 (如判题系统)
     CODE_COMPILE_ERROR(50201, "代码编译失败"),
     CODE_RUNTIME_ERROR(50202, "代码运行异常"),
-    CODE_TIME_LIMIT_EXCEEDED(50203, "代码执行超时");
+    CODE_TIME_LIMIT_EXCEEDED(50203, "代码执行超时"),
 
+    // 503xx: MinIO 文件存储类
+    FILE_UPLOAD_FAILED(50300, "文件上传失败"),
+    FILE_DELETE_FAILED(50301, "文件删除失败"),
+    BUCKET_CREATE_FAILED(50302, "存储桶创建失败");
+    
     /**
      * 状态码
      */
