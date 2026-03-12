@@ -28,6 +28,14 @@ export interface UserRegisterRes {
   message: string
 }
 
+export interface UploadAvatarRes {
+  code: number
+  data: {
+    avatarUrl: string
+  }
+  message: string
+}
+
 export function userLogin(params: LoginParams): Promise<LoginResponse> {
   return request.post('/user/login', params)
 }
@@ -42,6 +50,18 @@ export function userLogout(): Promise<UserLogoutRes> {
 
 export function userRegister(params: UserRegisterParams): Promise<UserRegisterRes> {
   return request.post('/user/register', params)
+}
+
+export function uploadAvatar(userId: number, file: File): Promise<UploadAvatarRes> {
+  const formData = new FormData()
+  formData.append('userId', userId.toString())
+  formData.append('file', file)
+
+  return request.post('/user/updateUserAvatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }
 
 export function getAllUsers(pageNum: number, pageSize: number): Promise<GetAllUsersRes> {
