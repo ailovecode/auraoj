@@ -9,6 +9,7 @@ import com.zhy.auraojbackend.model.vo.UserInfoVO;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
 * @author zhy
@@ -79,4 +80,13 @@ public interface UserInfoService extends IService<UserInfo> {
      * @return 是否删除成功
      */
     boolean deleteUser(Long userId);
+
+    /**
+     * 更新用户头像
+     *
+     * @param userId  用户 ID
+     * @param file    头像文件
+     * @return 是否更新成功
+     */
+    boolean updateUserAvatar(Long userId, MultipartFile file);
 }

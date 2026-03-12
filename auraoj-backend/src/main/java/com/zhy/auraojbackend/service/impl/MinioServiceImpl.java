@@ -69,7 +69,7 @@ public class MinioServiceImpl implements MinioService {
     }
 
     @Override
-    public String uploadFile(MultipartFile file) {
+    public String uploadFile(MultipartFile file, String fileType) {
         ThrowUtils.throwIf(file == null || file.isEmpty(), ErrorCode.BAD_PARAMS, "上传文件不能为空");
             
         // 确保 Bucket 存在且为 public
@@ -83,11 +83,12 @@ public class MinioServiceImpl implements MinioService {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
 
+
         // 获取当前年月，格式化为 yyyy/MM 形式，例如：2026/03
         String monthPath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
 
         // 使用 UUID 防止文件名冲突，加上日期目录按月归档：如 2026/03/uuid.png
-        String objectName = monthPath + "/" + UUID.randomUUID().toString().replace("-", "") + extension;
+        String objectName = fileType + "/" + monthPath + "/" + UUID.randomUUID().toString().replace("-", "") + extension;
     
         try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
@@ -99,7 +100,7 @@ public class MinioServiceImpl implements MinioService {
                             .contentType(file.getContentType()) 
                             .build()
             );
-            return objectName;
+            return String.format("%s/%s/%s", minioConfig.getEndpoint(), minioConfig.getBucketName(), objectName);
         } catch (Exception e) {
             log.error("文件上传到 MinIO 失败，文件名：{}", originalFilename, e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, "文件上传失败：" + e.getMessage());

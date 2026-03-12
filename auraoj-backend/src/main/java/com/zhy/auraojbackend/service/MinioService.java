@@ -20,7 +20,7 @@ public interface MinioService {
      * 上传文件
      * @return 存储在 MinIO 中的文件名
      */
-    String uploadFile(MultipartFile file);
+    String uploadFile(MultipartFile file, String fileType);
 
     /**
      * 删除文件

@@ -15,12 +15,15 @@ import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
+import com.zhy.auraojbackend.service.MinioService;
 import com.zhy.auraojbackend.service.UserInfoService;
 import com.zhy.auraojbackend.utils.PasswordEncoderUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,6 +41,9 @@ import java.util.concurrent.ConcurrentMap;
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
     implements UserInfoService{
     private final ConcurrentMap<String, Object> userLocks = new ConcurrentHashMap<>();
+
+    @Resource
+    private MinioService minioService;
 
     @Override
     public Long userRegister(UserRegisterRequest userRegisterRequest) {
@@ -397,5 +403,23 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         
         log.info("用户已被软删除：userId={}, username={}", userId, userInfo.getUsername());
         return true;
+    }
+
+    @Override
+    public boolean updateUserAvatar(Long userId, MultipartFile file) {
+
+        // 调用 MinIO 服务上传文件
+        String avatarUrl = minioService.uploadFile(file, "avatar");
+
+        // 更新当前用户的头像信息
+        UserUpdateRequest userUpdateRequest = new UserUpdateRequest();
+        userUpdateRequest.setAvatar(avatarUrl);
+        boolean updateResult = this.adminUpdateUser(userId, userUpdateRequest);
+
+        if (updateResult) {
+            return true;
+        } else {
+            throw new BusinessException(ErrorCode.UPLOAD_AVATAR_ERROR, "更新头像失败");
+        }
     }
 }

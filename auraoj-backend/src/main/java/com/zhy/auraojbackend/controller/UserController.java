@@ -1,17 +1,21 @@
 package com.zhy.auraojbackend.controller;
 
-import cn.dev33.satoken.annotation.*;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaIgnore;
+import cn.dev33.satoken.annotation.SaMode;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.common.Result;
 import com.zhy.auraojbackend.exception.BusinessException;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
-import com.zhy.auraojbackend.model.dto.PageRequest;
-import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.service.MinioService;
 import com.zhy.auraojbackend.service.UserInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +27,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 /**
@@ -38,6 +43,9 @@ public class UserController {
 
     @Resource
     private UserInfoService userInfoService;
+
+    @Resource
+    private MinioService minioService;
 
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册接口")
@@ -192,4 +200,26 @@ public class UserController {
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }
+
+    @PostMapping("/updateUserAvatar")
+    @Operation(summary = "上传用户头像", description = "上传当前登录用户的头像图片")
+    @ApiResponse(responseCode = "200", description = "上传成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckLogin
+    public Result<Boolean> updateUserAvatar(
+            @Parameter(description = "目标用户 ID", required = true) @RequestParam("userId") Long userId,
+            @Parameter(description = "头像文件", required = true) @RequestParam("file") MultipartFile file,
+            HttpServletRequest request) {
+        try {
+            boolean result = userInfoService.updateUserAvatar(userId, file);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("上传头像异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+
 }
