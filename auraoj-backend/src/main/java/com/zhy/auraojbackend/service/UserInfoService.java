@@ -46,7 +46,7 @@ public interface UserInfoService extends IService<UserInfo> {
      *
      * @return 当前用户信息
      */
-    UserInfo getCurrentUser();
+    UserInfoVO getCurrentUser();
 
     /**
      * 更新当前登录用户信息
@@ -54,7 +54,7 @@ public interface UserInfoService extends IService<UserInfo> {
      * @param userUpdateRequest 更新请求参数
      * @return 是否更新成功
      */
-    boolean updateCurrentUser(UserUpdateRequest userUpdateRequest);
+    UserInfoVO updateCurrentUser(UserUpdateRequest userUpdateRequest);
 
     /**
      * 管理员更新用户信息
@@ -63,7 +63,7 @@ public interface UserInfoService extends IService<UserInfo> {
      * @param userUpdateRequest 更新请求参数
      * @return 是否更新成功
      */
-    boolean adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest);
+    UserInfoVO adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest);
 
     /**
      * 获取所有用户信息（管理员和教师权限，分页）
@@ -88,5 +88,5 @@ public interface UserInfoService extends IService<UserInfo> {
      * @param file    头像文件
      * @return 是否更新成功
      */
-    boolean updateUserAvatar(Long userId, MultipartFile file);
+    UserInfoVO updateUserAvatar(Long userId, MultipartFile file);
 }

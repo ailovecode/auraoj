@@ -13,7 +13,6 @@ import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
 import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
-import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
 import com.zhy.auraojbackend.service.MinioService;
 import com.zhy.auraojbackend.service.UserInfoService;
@@ -39,7 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/user")
 @Tag(name = "用户管理", description = "用户管理接口")
 @Slf4j
-public class UserController {
+public class UserManagerController {
 
     @Resource
     private UserInfoService userInfoService;
@@ -57,7 +56,7 @@ public class UserController {
             HttpServletRequest request) {
         try {
             Long result = userInfoService.userRegister(userRegisterRequest);
-            return Result.success(result);
+            return Result.success(result, "注册成功!");
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
@@ -93,7 +92,7 @@ public class UserController {
     public Result<Boolean> userLogout(HttpServletRequest request) {
         try {
             boolean result = userInfoService.userLogout();
-            return Result.success(result);
+            return Result.success(result, "登出成功");
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
@@ -107,9 +106,9 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "获取成功",
             content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
-    public Result<UserInfo> getCurrentUser(HttpServletRequest request) {
+    public Result<UserInfoVO> getCurrentUser(HttpServletRequest request) {
         try {
-            UserInfo currentUser = userInfoService.getCurrentUser();
+            UserInfoVO currentUser = userInfoService.getCurrentUser();
             return Result.success(currentUser);
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());
@@ -124,11 +123,11 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "更新成功",
             content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
-    public Result<Boolean> updateCurrentUser(
+    public Result<UserInfoVO> updateCurrentUser(
             @Parameter(description = "用户信息更新参数") @RequestBody UserUpdateRequest userUpdateRequest,
             HttpServletRequest request) {
         try {
-            boolean result = userInfoService.updateCurrentUser(userUpdateRequest);
+            UserInfoVO result = userInfoService.updateCurrentUser(userUpdateRequest);
             return Result.success(result);
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());
@@ -143,12 +142,12 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "更新成功",
             content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
-    public Result<Boolean> updateCurrentUser(
+    public Result<UserInfoVO> updateCurrentUser(
             @Parameter(description = "目标用户 ID", required = true) @PathVariable Long userId,
             @Parameter(description = "用户信息更新参数") @RequestBody UserUpdateRequest userUpdateRequest,
             HttpServletRequest request) {
         try {
-            boolean result = userInfoService.adminUpdateUser(userId, userUpdateRequest);
+            UserInfoVO result = userInfoService.adminUpdateUser(userId, userUpdateRequest);
             return Result.success(result);
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());
@@ -206,12 +205,12 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "上传成功",
             content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
-    public Result<Boolean> updateUserAvatar(
+    public Result<UserInfoVO> updateUserAvatar(
             @Parameter(description = "目标用户 ID", required = true) @RequestParam("userId") Long userId,
             @Parameter(description = "头像文件", required = true) @RequestParam("file") MultipartFile file,
             HttpServletRequest request) {
         try {
-            boolean result = userInfoService.updateUserAvatar(userId, file);
+            UserInfoVO result = userInfoService.updateUserAvatar(userId, file);
             return Result.success(result);
         } catch (BusinessException e) {
             return Result.error(e.getCode(), e.getMessage());

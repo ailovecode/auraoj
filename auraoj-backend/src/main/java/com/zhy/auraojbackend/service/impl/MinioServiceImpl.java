@@ -100,7 +100,7 @@ public class MinioServiceImpl implements MinioService {
                             .contentType(file.getContentType()) 
                             .build()
             );
-            return String.format("%s/%s/%s", minioConfig.getEndpoint(), minioConfig.getBucketName(), objectName);
+            return objectName;
         } catch (Exception e) {
             log.error("文件上传到 MinIO 失败，文件名：{}", originalFilename, e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED, "文件上传失败：" + e.getMessage());

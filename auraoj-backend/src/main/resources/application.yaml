@@ -68,11 +68,17 @@ knife4j:
     enable: false # 如果不需要账号密码认证，设为 false
 
 # minio 配置
-
-
 minio:
   endpoint: ${MINIO_ENDPOINT}
   access-key: ${MINIO_AK}
   access-secret: ${MINIO_SK}
   bucket-name: auraoj
   secure: false
+
+# oj 配置
+oj:
+  # 文件路径前缀（跨平台兼容）
+  # Windows 开发环境示例：G:\judge\data 或 D:/judge/data
+  # Linux 部署环境示例：/home/judge/data 或 /opt/judge/data
+  # 注意：Windows 中使用双反斜杠或正斜杠，Linux 使用正斜杠
+  path-prefix: G:\judge\data

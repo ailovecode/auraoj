@@ -45,6 +45,17 @@ public class Result<T> implements Serializable {
     }
 
     /**
+     * 成功
+     *
+     * @param data 返回的数据
+     * @param <T>  数据类型
+     * @return Result<T>
+     */
+    public static <T> Result<T> success(T data, String message) {
+        return new Result<>(ErrorCode.SUCCESS.getCode(), data, message);
+    }
+
+    /**
      * 失败 (通过 ErrorCode 枚举)
      *
      * @param errorCode 错误码枚举

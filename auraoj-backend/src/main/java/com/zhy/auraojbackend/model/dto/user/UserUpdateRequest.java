@@ -108,12 +108,7 @@ public class UserUpdateRequest implements Serializable, AbstractCheckRequest {
                 && !password.equals(confirmPassword)) {
             throw new BusinessException(ErrorCode.BAD_PARAMS, "两次输入的密码不一致");
         }
-    
-        // 校验 URL 格式（如果提供了头像URL）
-        if (StringUtils.isNotBlank(avatar) && !avatar.matches("^https?://.+")) {
-            throw new BusinessException(ErrorCode.BAD_PARAMS, "头像URL 格式不正确");
-        }
-    
+
         // 校验性别值范围
         if (gender != null && gender != -1 && gender != 0 && gender != 1) {
             throw new BusinessException(ErrorCode.BAD_PARAMS, "性别值只能为 -1、0 或 1");

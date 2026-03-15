@@ -2,6 +2,7 @@ package com.zhy.auraojbackend.model.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
@@ -12,6 +13,7 @@ import java.util.List;
  * @Author zhy
  * @Date 2026/3/1
  */
+@Getter
 public enum UserRoleEnum {
 
     STUDENT("student", "学生", 1),
@@ -59,15 +61,4 @@ public enum UserRoleEnum {
     }
 
 
-    public String getValue() {
-        return value;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Integer getLabel() {
-        return label;
-    }
 }
