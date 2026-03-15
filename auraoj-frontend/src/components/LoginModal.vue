@@ -13,6 +13,7 @@ interface Emits {
   (e: 'update:visible', value: boolean): void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 

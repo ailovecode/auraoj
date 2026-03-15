@@ -70,9 +70,7 @@ const router = createRouter({
         {
           path: 'problem',
           name: 'adminProblem',
-          component: {
-            template: '<div class="placeholder-page"><h1>题目管理</h1></div>'
-          }
+          component: () => import('@/views/admin/ProblemManage.vue')
         },
         {
           path: 'submission',

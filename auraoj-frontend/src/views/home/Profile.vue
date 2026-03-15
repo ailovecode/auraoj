@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useUserStore } from '@/store/user'
-import { Card, Avatar, Tag, Row, Col, Divider, Message, Modal, Button, Spin } from '@arco-design/web-vue'
+import { Card, Avatar, Tag, Row, Col, Divider, Message, Modal, Button } from '@arco-design/web-vue'
 import { IconCamera, IconUser, IconEmail, IconPhone, IconLocation, IconInfo, IconUpload } from '@arco-design/web-vue/es/icon'
-import { uploadAvatar } from '@/api/user'
+import { uploadAvatar, getUserInfo } from '@/api/user'
 
 const userStore = useUserStore()
 
@@ -100,10 +100,7 @@ const handleUploadAvatar = async () => {
     const res = await uploadAvatar(userInfo.value.id, selectedFile.value)
 
     if (res.code === 200) {
-      userStore.setUserInfo({
-        ...userInfo.value,
-        avatar: res.data.avatarUrl
-      })
+      await refreshUserInfo()
       Message.success('头像更新成功')
       avatarModalVisible.value = false
       selectedFile.value = null
@@ -116,6 +113,17 @@ const handleUploadAvatar = async () => {
     Message.error(error.response?.data?.message || '上传失败，请稍后重试')
   } finally {
     uploading.value = false
+  }
+}
+
+const refreshUserInfo = async () => {
+  try {
+    const res = await getUserInfo()
+    if (res.code === 200 && res.data) {
+      userStore.setUserInfo(res.data)
+    }
+  } catch (error) {
+    console.error('刷新用户信息失败:', error)
   }
 }
 

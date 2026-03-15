@@ -13,42 +13,69 @@ export interface UserInfo {
   level?: number
   score?: number
   status?: number
-  loginTime?: string
-}
-
-export interface LoginParams {
-  username: string
-  password: string
-}
-
-export interface LoginResponse {
-  code: number
-  data: UserInfo & { token: string }
-  message: string
-}
-
-export interface AdminUserInfo extends UserInfo {
   gmtCreate?: string
   gmtModified?: string
 }
 
+// 登录参数
+export interface LoginParams {
+  username: string
+  password: string
+}
+export interface LoginResponse {
+  code: number
+  data: UserInfo & { token: string } & { loginTime: string }
+  message: string
+}
+
+// 基本用户信息返回参数
+export interface BasicUserInfoRes {
+  code: number
+  data: UserInfo
+  message: string
+}
+
+// 用户登出返回参数
+export interface UserLogoutRes {
+  code: number
+  data: boolean
+  message: string
+}
+
+// 注册接口参数
+export interface UserRegisterParams {
+  username?: string
+  password?: string
+  confirmPassword?: string
+  phone?: string
+  email?: string
+  gender?: number
+  school?: string
+}
+export interface UserRegisterRes {
+  code: number
+  data: number
+  message: string
+}
+
+// 获取所有用户返回参数
 export interface UserListData {
   pageNum: number
   pageSize: number
   total: number
   totalPages: number
-  list: AdminUserInfo[]
+  list: UserInfo[]
   hasPrevious: boolean
   hasNext: boolean
 }
-
 export interface GetAllUsersRes {
   code: number
   data: UserListData
   message: string
 }
 
-export interface UpdateCurrentUser_1Params {
+// 更新用户信息参数
+export interface UpdateUserParams {
   username?: string
   phone?: string
   email?: string
@@ -60,14 +87,9 @@ export interface UpdateCurrentUser_1Params {
   signature?: string
 }
 
-export interface UpdateCurrentUser_1Res {
-  code: number
-  data: Record<string, unknown>
-  message: string
-}
-
+// 删除用户返回参数
 export interface DeleteUserRes {
   code: number
-  data: Record<string, unknown>
+  data: boolean
   message: string
 }

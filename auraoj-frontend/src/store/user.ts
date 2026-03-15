@@ -1,19 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserInfo } from '@/types/user'
+import { storage } from '@/utils/storage'
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref<string>(localStorage.getItem('token') || '')
-  const userInfo = ref<UserInfo | null>(null)
+  const token = ref<string>(storage.get<string>('token', ''))
+  const userInfo = ref<UserInfo | null>(storage.get<UserInfo>('userInfo'))
 
   const setToken = (newToken: string) => {
     token.value = newToken
-    localStorage.setItem('token', newToken)
+    storage.set('token', newToken)
   }
 
   const setUserInfo = (info: UserInfo) => {
     userInfo.value = info
-    localStorage.setItem('userInfo', JSON.stringify(info))
+    storage.set('userInfo', info)
   }
 
   const isAdmin = computed(() => {
@@ -24,22 +25,9 @@ export const useUserStore = defineStore('user', () => {
   const logout = () => {
     token.value = ''
     userInfo.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    storage.remove('token')
+    storage.remove('userInfo')
   }
-
-  const initUserInfo = () => {
-    const stored = localStorage.getItem('userInfo')
-    if (stored) {
-      try {
-        userInfo.value = JSON.parse(stored)
-      } catch {
-        userInfo.value = null
-      }
-    }
-  }
-
-  initUserInfo()
 
   return {
     token,
