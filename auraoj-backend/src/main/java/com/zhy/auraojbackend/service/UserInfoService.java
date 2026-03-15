@@ -1,10 +1,10 @@
 package com.zhy.auraojbackend.service;
 
 import com.zhy.auraojbackend.model.entity.UserInfo;
-import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
-import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
-import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
-import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserLoginRequest;
+import com.zhy.auraojbackend.model.dto.user.response.UserLoginResponse;
+import com.zhy.auraojbackend.model.dto.user.request.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserUpdateRequest;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;

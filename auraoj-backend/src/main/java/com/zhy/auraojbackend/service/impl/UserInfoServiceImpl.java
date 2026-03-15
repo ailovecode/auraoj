@@ -8,10 +8,10 @@ import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.mapper.UserInfoMapper;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
-import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
-import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
-import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
-import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserLoginRequest;
+import com.zhy.auraojbackend.model.dto.user.response.UserLoginResponse;
+import com.zhy.auraojbackend.model.dto.user.request.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
@@ -171,7 +171,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         loginResponse.setLoginTime(new Date());
         loginResponse.setToken(StpUtil.getTokenValue());
         String avatar = userInfo.getAvatar();
-        if (StringUtils.isEmpty(avatar)) {
+        if (StringUtils.isNotBlank(avatar)) {
             loginResponse.setAvatar(minioService.getFileUrl(avatar));
         }
 

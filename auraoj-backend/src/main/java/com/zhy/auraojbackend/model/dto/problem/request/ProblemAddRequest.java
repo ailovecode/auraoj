@@ -1,4 +1,4 @@
-package com.zhy.auraojbackend.model.dto.problem;
+package com.zhy.auraojbackend.model.dto.problem.request;
 
 import com.zhy.auraojbackend.model.dto.AbstractCheckRequest;
 import com.zhy.auraojbackend.model.enums.DifficultyLevelEnum;

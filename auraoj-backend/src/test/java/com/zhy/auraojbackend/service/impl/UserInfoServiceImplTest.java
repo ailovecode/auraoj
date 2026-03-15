@@ -1,6 +1,6 @@
 package com.zhy.auraojbackend.service.impl;
 
-import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserRegisterRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.service.UserInfoService;
 import jakarta.annotation.Resource;

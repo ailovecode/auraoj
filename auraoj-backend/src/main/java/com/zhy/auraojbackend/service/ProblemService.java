@@ -1,6 +1,9 @@
 package com.zhy.auraojbackend.service;
 
-import com.zhy.auraojbackend.model.dto.problem.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -17,5 +20,11 @@ public interface ProblemService extends IService<Problem> {
      * @return 题目 ID
      */
     Long addProblem(ProblemAddRequest problemAddRequest);
-    
+
+    /**
+     * 查询所有题目（分页）
+     * @param pageRequest 分页请求参数
+     * @return 分页后的题目列表
+     */
+    PageResponse<QueryAllProblemResponse> queryAllProblems(PageRequest pageRequest);
 }

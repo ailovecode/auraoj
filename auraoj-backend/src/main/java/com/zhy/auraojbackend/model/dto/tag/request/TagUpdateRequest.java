@@ -1,4 +1,4 @@
-package com.zhy.auraojbackend.model.dto.tag;
+package com.zhy.auraojbackend.model.dto.tag.request;
 
 import com.zhy.auraojbackend.model.dto.AbstractCheckRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,12 +7,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * 新增标签请求参数
+ * 更新标签请求参数
  * @author zhy
  * @Date 2026/3/15
  */
 @Data
-public class TagAddRequest implements AbstractCheckRequest {
+public class TagUpdateRequest implements AbstractCheckRequest {
+
+    /**
+     * 标签 ID
+     */
+    @NotNull(message = "标签 ID 不能为空")
+    @Schema(description = "标签 ID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long id;
 
     /**
      * 标签名

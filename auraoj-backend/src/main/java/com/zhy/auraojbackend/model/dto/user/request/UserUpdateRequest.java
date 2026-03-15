@@ -1,4 +1,4 @@
-package com.zhy.auraojbackend.model.dto.user;
+package com.zhy.auraojbackend.model.dto.user.request;
 
 import com.zhy.auraojbackend.model.dto.AbstractCheckRequest;
 import com.zhy.auraojbackend.common.ErrorCode;

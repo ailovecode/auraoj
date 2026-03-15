@@ -1,7 +1,9 @@
 package com.zhy.auraojbackend.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,18 +11,26 @@ import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.exception.ThrowUtils;
 import com.zhy.auraojbackend.mapper.ProblemMapper;
-import com.zhy.auraojbackend.model.dto.problem.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.PageRequest;
+import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
 import com.zhy.auraojbackend.model.entity.ProblemTagMap;
+import com.zhy.auraojbackend.model.entity.TagInfo;
 import com.zhy.auraojbackend.service.ProblemFileService;
 import com.zhy.auraojbackend.service.ProblemService;
 import com.zhy.auraojbackend.service.ProblemTagMapService;
+import com.zhy.auraojbackend.service.TagService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,9 +45,10 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
 
     @Resource
     private ProblemTagMapService problemTagMapService;
-
     @Resource
     private ProblemFileService problemFileService;
+    @Resource
+    private TagService tagService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -102,5 +113,86 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
             }
         }
         return problem.getId();
+    }
+
+    @Override
+    public PageResponse<QueryAllProblemResponse> queryAllProblems(PageRequest pageRequest) {
+        log.info("查询所有题目，pageNum: {}, pageSize: {}", pageRequest.getPageNum(), pageRequest.getPageSize());
+        
+        // 构建查询条件（可以添加更多过滤条件）
+        LambdaQueryWrapper<Problem> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 排序处理
+        if (pageRequest.getSortField() != null && !pageRequest.getSortField().isEmpty()) {
+            if ("asc".equalsIgnoreCase(pageRequest.getSortOrder())) {
+                queryWrapper.orderByAsc(Problem::getGmtCreate);
+            } else {
+                queryWrapper.orderByDesc(Problem::getGmtCreate);
+            }
+        } else {
+            // 默认按创建时间降序
+            queryWrapper.orderByDesc(Problem::getGmtCreate);
+        }
+        
+        // 分页查询
+        Page<Problem> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<Problem> resultPage = this.page(page, queryWrapper);
+        
+        // 转换为响应对象
+        List<QueryAllProblemResponse> responseList = resultPage.getRecords().stream()
+                .map(this::convertToResponse)
+                .toList();
+        
+        // 构建分页响应
+        PageResponse<QueryAllProblemResponse> response = new PageResponse<>();
+        response.setPageNum(Math.toIntExact(resultPage.getCurrent()));
+        response.setPageSize((int) resultPage.getSize());
+        response.setTotal(resultPage.getTotal());
+        response.setList(responseList);
+        response.setHasPrevious(resultPage.getCurrent() > 1);
+        response.setHasNext(resultPage.getCurrent() < resultPage.getPages());
+        
+        log.info("查询所有题目成功，总数：{}, 当前页：{}", resultPage.getTotal(), resultPage.getCurrent());
+        return response;
+    }
+
+    /**
+     * 将 Problem 实体转换为 QueryAllProblemResponse 对象
+     */
+    private QueryAllProblemResponse convertToResponse(Problem problem) {
+        QueryAllProblemResponse response = new QueryAllProblemResponse();
+        BeanUtils.copyProperties(problem, response);
+            
+        // 查询关联标签信息
+        List<TagInfo> tagList = getTagListByProblemId(problem.getId());
+        response.setTags(tagList);
+            
+        return response;
+    }
+    
+    /**
+     * 根据题目 ID 查询关联的标签列表
+     * @param problemId 题目 ID
+     * @return 标签列表
+     */
+    private List<TagInfo> getTagListByProblemId(Long problemId) {
+        // 1. 通过 ProblemTagMap 查询所有关联的 tagId
+        LambdaQueryWrapper<ProblemTagMap> mapQueryWrapper = new LambdaQueryWrapper<>();
+        mapQueryWrapper.eq(ProblemTagMap::getProblemId, problemId);
+        List<ProblemTagMap> problemTagMaps = problemTagMapService.list(mapQueryWrapper);
+            
+        if (CollectionUtils.isEmpty(problemTagMaps)) {
+            return Collections.emptyList();
+        }
+            
+        // 2. 提取所有的 tagId
+        List<Long> tagIds = problemTagMaps.stream()
+                .map(ProblemTagMap::getTagId)
+                .toList();
+            
+        // 3. 根据 tagId 查询标签信息
+        LambdaQueryWrapper<TagInfo> tagQueryWrapper = new LambdaQueryWrapper<>();
+        tagQueryWrapper.in(TagInfo::getId, tagIds);
+        return tagService.list(tagQueryWrapper);
     }
 }

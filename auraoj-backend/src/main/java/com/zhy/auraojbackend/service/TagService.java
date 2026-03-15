@@ -1,8 +1,8 @@
 package com.zhy.auraojbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zhy.auraojbackend.model.dto.tag.TagAddRequest;
-import com.zhy.auraojbackend.model.dto.tag.TagUpdateRequest;
+import com.zhy.auraojbackend.model.dto.tag.request.TagAddRequest;
+import com.zhy.auraojbackend.model.dto.tag.request.TagUpdateRequest;
 import com.zhy.auraojbackend.model.entity.TagInfo;
 
 import java.util.List;
