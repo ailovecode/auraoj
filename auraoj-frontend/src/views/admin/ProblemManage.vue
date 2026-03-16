@@ -22,7 +22,6 @@ import {
   IconSearch,
   IconPlus,
   IconRefresh,
-  IconDownload,
   IconSettings,
 } from '@arco-design/web-vue/es/icon'
 import { queryAllProblems } from '@/api/problem'
