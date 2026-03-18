@@ -20,9 +20,7 @@ const router = createRouter({
         {
           path: 'problem',
           name: 'problem',
-          component: {
-            template: '<div class="placeholder-page"><h1>题目列表</h1></div>'
-          }
+          component: () => import('@/views/home/ProblemList.vue')
         },
         {
           path: 'submission',

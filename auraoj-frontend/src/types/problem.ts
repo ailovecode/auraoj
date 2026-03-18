@@ -1,5 +1,5 @@
 // 难度等级类型
-export type DifficultyLevel = 1 | 2 | 3
+export type DifficultyLevel = "easy" | "medium" | "hard"
 
 // 基础题目信息
 export interface BaseProblemInfo {
@@ -77,4 +77,10 @@ export interface ProblemAddRes {
   code: number
   data: number
   message: string
+}
+
+export interface ProblemSearchRequest {
+  title?: string
+  difficulty?: DifficultyLevel
+  tagId?: number
 }
