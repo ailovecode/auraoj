@@ -73,6 +73,11 @@ const router = createRouter({
           component: () => import('@/views/admin/ProblemManage.vue')
         },
         {
+          path: 'problem/add',
+          name: 'adminAddProblem',
+          component: () => import('@/views/admin/AddProblem.vue')
+        },
+        {
           path: 'submission',
           name: 'adminSubmission',
           component: {

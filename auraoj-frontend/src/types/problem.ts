@@ -71,3 +71,10 @@ export interface ProblemAddRequest {
   difficulty: DifficultyLevel;
   tagIds?: number[];
 }
+
+// 问题添加结果
+export interface ProblemAddRes {
+  code: number
+  data: number
+  message: string
+}

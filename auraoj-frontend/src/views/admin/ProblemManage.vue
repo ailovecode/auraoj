@@ -26,7 +26,9 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { queryAllProblems } from '@/api/problem'
 import type { AdminProblemInfo } from '@/types/problem'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(10)
@@ -103,7 +105,7 @@ const handlePageSizeChange = (size: number) => {
 }
 
 const handleAdd = () => {
-  Message.info('新建题目功能待开发')
+  router.push('/admin/problem/add')
 }
 
 const handleEdit = (problem: AdminProblemInfo) => {
