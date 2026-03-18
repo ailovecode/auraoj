@@ -1,5 +1,6 @@
 package com.zhy.auraojbackend.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import com.zhy.auraojbackend.common.ErrorCode;
@@ -8,6 +9,7 @@ import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.service.ProblemService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -87,4 +89,28 @@ public class ProblemManagerController {
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }
+
+    @PostMapping("/search")
+    @Operation(summary = "搜索题目", description = "根据题目名称或题号搜索题目")
+    @ApiResponse(responseCode = "200", description = "查询成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    @SaCheckLogin
+    public Result<PageResponse<QueryAllProblemResponse>> searchProblems(
+            @Parameter(description = "页码，默认 1") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小，默认 10") @RequestParam(defaultValue = "10") Integer pageSize,
+            @Parameter(description = "题目名称") @RequestBody SearchProblemsRequest searchProblemsRequest,
+            HttpServletRequest request) {
+        try {
+            PageResponse<QueryAllProblemResponse> result = problemService.searchProblems(pageNum, pageSize, searchProblemsRequest);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            log.error("搜索题目异常 - 业务异常", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("搜索题目异常 - 系统异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+    
+    
 }

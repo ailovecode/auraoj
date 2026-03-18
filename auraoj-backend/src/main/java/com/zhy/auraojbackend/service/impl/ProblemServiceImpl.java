@@ -14,6 +14,7 @@ import com.zhy.auraojbackend.mapper.ProblemMapper;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
 import com.zhy.auraojbackend.model.entity.ProblemTagMap;
@@ -24,6 +25,7 @@ import com.zhy.auraojbackend.service.ProblemTagMapService;
 import com.zhy.auraojbackend.service.TagService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -153,6 +155,49 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         response.setHasNext(resultPage.getCurrent() < resultPage.getPages());
         
         log.info("查询所有题目成功，总数：{}, 当前页：{}", resultPage.getTotal(), resultPage.getCurrent());
+        return response;
+    }
+
+    @Override
+    public PageResponse<QueryAllProblemResponse> searchProblems(Integer pageNum, Integer pageSize,
+                                                                SearchProblemsRequest searchProblemsRequest) {
+        log.info("搜索题目，pageNum: {}, pageSize: {}, keyword: {}", pageNum, pageSize, searchProblemsRequest);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<Problem> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 按标题搜索
+        if (StringUtils.isNotBlank(searchProblemsRequest.getTitle())) {
+            queryWrapper.like(Problem::getTitle, searchProblemsRequest.getTitle());
+        }
+
+        // 按难度搜索
+        if (StringUtils.isNotBlank(searchProblemsRequest.getDifficulty())) {
+            queryWrapper.eq(Problem::getDifficulty, searchProblemsRequest.getDifficulty());
+        }
+
+        // 按照编号升序排列
+        queryWrapper.orderByAsc(Problem::getId);
+        
+        // 分页查询
+        Page<Problem> page = new Page<>(pageNum, pageSize);
+        Page<Problem> resultPage = this.page(page, queryWrapper);
+        
+        // 转换为响应对象
+        List<QueryAllProblemResponse> responseList = resultPage.getRecords().stream()
+                .map(this::convertToResponse)
+                .toList();
+        
+        // 构建分页响应
+        PageResponse<QueryAllProblemResponse> response = new PageResponse<>();
+        response.setPageNum(Math.toIntExact(resultPage.getCurrent()));
+        response.setPageSize((int) resultPage.getSize());
+        response.setTotal(resultPage.getTotal());
+        response.setList(responseList);
+        response.setHasPrevious(resultPage.getCurrent() > 1);
+        response.setHasNext(resultPage.getCurrent() < resultPage.getPages());
+        
+        log.info("搜索题目成功，总数：{}, 当前页：{}", resultPage.getTotal(), resultPage.getCurrent());
         return response;
     }
 

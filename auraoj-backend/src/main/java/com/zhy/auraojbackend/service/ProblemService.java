@@ -1,11 +1,12 @@
 package com.zhy.auraojbackend.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
 * @author zhy
@@ -27,4 +28,13 @@ public interface ProblemService extends IService<Problem> {
      * @return 分页后的题目列表
      */
     PageResponse<QueryAllProblemResponse> queryAllProblems(PageRequest pageRequest);
+
+    /**
+     * 根据题目名称或题号搜索题目（分页）
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @param searchProblemsRequest 搜索参数
+     * @return 分页后的题目列表
+     */
+    PageResponse<QueryAllProblemResponse> searchProblems(Integer pageNum, Integer pageSize, SearchProblemsRequest searchProblemsRequest);
 }
