@@ -31,14 +31,14 @@ import {
   IconDownload,
   IconSettings
 } from '@arco-design/web-vue/es/icon'
-import { getAllUsers, updateCurrentUser_1, deleteUser } from '@/api/user'
-import type { AdminUserInfo, UpdateCurrentUser_1Params } from '@/types/user'
+import { getAllUsers, updateCurrentUser, deleteUser } from '@/api/user'
+import type { UserInfo, UpdateUserParams } from '@/types/user'
 
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const userList = ref<AdminUserInfo[]>([])
+const userList = ref<UserInfo[]>([])
 
 // 搜索表单模型
 const searchForm = reactive({
@@ -100,7 +100,6 @@ const fetchUserList = async () => {
     if (res.code === 200 && res.data) {
       userList.value = res.data.list || []
       total.value = res.data.total || 0
-      console.log('获取用户列表成功:', res.data)
     }
   } catch (error) {
     console.error('获取用户列表失败:', error)
@@ -122,15 +121,15 @@ const handlePageSizeChange = (size: number) => {
 }
 
 const editModalVisible = ref(false)
-const editingUser = ref<AdminUserInfo | null>(null)
+const editingUser = ref<UserInfo | null>(null)
 const editFormRef = ref()
-const editFormData = ref<UpdateCurrentUser_1Params>({})
+const editFormData = ref<UpdateUserParams>({})
 
 const handleAdd = () => {
   Message.info('新建用户功能待开发')
 }
 
-const handleEdit = (user: AdminUserInfo) => {
+const handleEdit = (user: UserInfo) => {
   editingUser.value = user
   editFormData.value = {
     username: user.username,
@@ -150,12 +149,12 @@ const handleEditSubmit = async () => {
     if (!editingUser.value?.id) return
 
     // 1. 找出真正被修改过的字段 (Diff)
-    const changedData: Partial<UpdateCurrentUser_1Params> = {}
+    const changedData: Partial<UpdateUserParams> = {}
 
     // 遍历表单数据，和原始数据进行对比
     for (const key in editFormData.value) {
-      const formValue = editFormData.value[key as keyof UpdateCurrentUser_1Params]
-      const originalValue = editingUser.value[key as keyof AdminUserInfo]
+      const formValue = editFormData.value[key as keyof UpdateUserParams]
+      const originalValue = editingUser.value[key as keyof UserInfo]
 
       // 如果值不一样，说明用户修改了这个字段
       if (formValue !== originalValue) {
@@ -172,7 +171,7 @@ const handleEditSubmit = async () => {
     }
 
     // 3. 只把 changedData 传给后端
-    const res = await updateCurrentUser_1(editingUser.value.id, changedData)
+    const res = await updateCurrentUser(editingUser.value.id, changedData)
     if (res.code === 200) {
       Message.success('修改成功')
       editModalVisible.value = false
@@ -413,7 +412,7 @@ onMounted(() => {
               {{ formatDateTime(record.gmtCreate) }}
             </template>
           </TableColumn>
-          <TableColumn title="操作" :width="140" fixed="right">
+          <TableColumn title="操作" :width="140" align="center" fixed="right">
             <template #cell="{ record }">
               <Space size="small">
                 <Button type="text" size="small" @click="handleEdit(record)">
@@ -430,9 +429,6 @@ onMounted(() => {
           </TableColumn>
         </template>
       </Table>
-
-
-
       <div class="pagination-wrapper">
         <Pagination :total="total" :current="pageNum" :page-size="pageSize" :show-total="true" :show-page-size="true"
           :page-size-options="[10, 20, 50, 100]" @change="handlePageChange" @page-size-change="handlePageSizeChange" />

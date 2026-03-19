@@ -6,7 +6,6 @@ import {
   Menu,
   MenuItem,
   MenuItemGroup,
-  Icon,
   Button
 } from '@arco-design/web-vue'
 import {

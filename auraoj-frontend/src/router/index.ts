@@ -20,9 +20,12 @@ const router = createRouter({
         {
           path: 'problem',
           name: 'problem',
-          component: {
-            template: '<div class="placeholder-page"><h1>题目列表</h1></div>'
-          }
+          component: () => import('@/views/home/ProblemList.vue')
+        },
+        {
+          path: 'problem/:id',
+          name: 'problem-detail',
+          component: () => import('@/views/home/DoingQuestion.vue')
         },
         {
           path: 'submission',
@@ -37,6 +40,11 @@ const router = createRouter({
           component: {
             template: '<div class="placeholder-page"><h1>排行榜</h1></div>'
           }
+        },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: () => import('@/views/home/Profile.vue')
         },
         {
           path: 'login',
@@ -65,9 +73,12 @@ const router = createRouter({
         {
           path: 'problem',
           name: 'adminProblem',
-          component: {
-            template: '<div class="placeholder-page"><h1>题目管理</h1></div>'
-          }
+          component: () => import('@/views/admin/ProblemManage.vue')
+        },
+        {
+          path: 'problem/add',
+          name: 'adminAddProblem',
+          component: () => import('@/views/admin/AddProblem.vue')
         },
         {
           path: 'submission',

@@ -49,6 +49,10 @@ const handleSelect = async (value: any) => {
         userStore.logout()
         Message.success('已安全退出')
         router.push('/')
+      } else if (res.code === 40100) {
+        userStore.logout()
+        Message.success('已安全退出')
+        router.push('/')
       } else {
         Message.error(res.message || '退出失败')
       }
@@ -97,7 +101,12 @@ const handleSelect = async (value: any) => {
             <Dropdown trigger="hover" @select="handleSelect">
               <div class="user-avatar">
                 <Avatar :size="32" :style="{ backgroundColor: '#165DFF' }">
-                  <IconUser />
+                  <template v-if="userStore.userInfo?.avatar">
+                    <img :src="userStore.userInfo?.avatar" />
+                  </template>
+                  <template v-else>
+                    <IconUser />
+                  </template>
                 </Avatar>
                 <span class="username">{{ userStore.userInfo?.username || '用户' }}</span>
               </div>
@@ -106,7 +115,7 @@ const handleSelect = async (value: any) => {
                   <template #icon>
                     <IconUser />
                   </template>
-                  个人设置
+                  个人中心
                 </Doption>
                 <Doption value="submission">
                   <template #icon>
