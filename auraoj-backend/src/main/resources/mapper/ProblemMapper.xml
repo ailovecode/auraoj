@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhy.auraojbackend.mapper.ProblemMapper">
+
+    <resultMap id="BaseResultMap" type="com.zhy.auraojbackend.model.entity.Problem">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="inputDesc" column="input_desc" jdbcType="VARCHAR"/>
+            <result property="outputDesc" column="output_desc" jdbcType="VARCHAR"/>
+            <result property="dataScope" column="data_scope" jdbcType="VARCHAR"/>
+            <result property="judgeConfig" column="judge_config" jdbcType="OTHER"/>
+            <result property="judgeType" column="judge_type" jdbcType="VARCHAR"/>
+            <result property="difficulty" column="difficulty" jdbcType="OTHER"/>
+            <result property="submitNum" column="submit_num" jdbcType="INTEGER"/>
+            <result property="acceptNum" column="accept_num" jdbcType="INTEGER"/>
+            <result property="passRate" column="pass_rate" jdbcType="NUMERIC"/>
+            <result property="favourNum" column="favour_num" jdbcType="INTEGER"/>
+            <result property="status" column="status" jdbcType="SMALLINT"/>
+            <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+            <result property="gmtModified" column="gmt_modified" jdbcType="TIMESTAMP"/>
+            <result property="sampleOutput" column="sample_output" jdbcType="VARCHAR"/>
+            <result property="sampleInput" column="sample_input" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,title,description,
+        input_desc,output_desc,data_scope,
+        judge_config,judge_type,difficulty,
+        submit_num,accept_num,pass_rate,
+        favour_num,status,gmt_create,
+        gmt_modified,sample_output,sample_input
+    </sql>
+</mapper>

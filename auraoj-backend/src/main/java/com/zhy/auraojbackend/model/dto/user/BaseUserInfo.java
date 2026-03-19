@@ -1,4 +1,4 @@
-package com.zhy.auraojbackend.model.dto;
+package com.zhy.auraojbackend.model.dto.user;
 
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import lombok.Data;

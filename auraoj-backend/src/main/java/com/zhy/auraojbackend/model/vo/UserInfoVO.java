@@ -1,6 +1,6 @@
 package com.zhy.auraojbackend.model.vo;
 
-import com.zhy.auraojbackend.model.dto.BaseUserInfo;
+import com.zhy.auraojbackend.model.dto.user.BaseUserInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

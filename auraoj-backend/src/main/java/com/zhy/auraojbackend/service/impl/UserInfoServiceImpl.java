@@ -8,19 +8,22 @@ import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.mapper.UserInfoMapper;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
-import com.zhy.auraojbackend.model.dto.user.UserLoginRequest;
-import com.zhy.auraojbackend.model.dto.user.UserLoginResponse;
-import com.zhy.auraojbackend.model.dto.user.UserRegisterRequest;
-import com.zhy.auraojbackend.model.dto.user.UserUpdateRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserLoginRequest;
+import com.zhy.auraojbackend.model.dto.user.response.UserLoginResponse;
+import com.zhy.auraojbackend.model.dto.user.request.UserRegisterRequest;
+import com.zhy.auraojbackend.model.dto.user.request.UserUpdateRequest;
 import com.zhy.auraojbackend.model.entity.UserInfo;
 import com.zhy.auraojbackend.model.enums.UserRoleEnum;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
+import com.zhy.auraojbackend.service.MinioService;
 import com.zhy.auraojbackend.service.UserInfoService;
 import com.zhy.auraojbackend.utils.PasswordEncoderUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,6 +42,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
     implements UserInfoService{
     private final ConcurrentMap<String, Object> userLocks = new ConcurrentHashMap<>();
 
+    @Resource
+    private MinioService minioService;
+
     @Override
     public Long userRegister(UserRegisterRequest userRegisterRequest) {
         // 参数校验
@@ -56,7 +62,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         Object lock = userLocks.computeIfAbsent(username, k -> new Object());
         /**
          * todo:
-         * 限制用户更改的时间一个月一次
+         * 限制用户名更改的时间一个月一次
          * 如果是被删除的用户，重新注册是恢复还是重新注册
          */
         synchronized (lock) {
@@ -164,6 +170,10 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         BeanUtils.copyProperties(userInfo, loginResponse);
         loginResponse.setLoginTime(new Date());
         loginResponse.setToken(StpUtil.getTokenValue());
+        String avatar = userInfo.getAvatar();
+        if (StringUtils.isNotBlank(avatar)) {
+            loginResponse.setAvatar(minioService.getFileUrl(avatar));
+        }
 
         return loginResponse;
     }
@@ -181,28 +191,20 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
     }
 
     @Override
-    public UserInfo getCurrentUser() {
+    public UserInfoVO getCurrentUser() {
         // 检查是否已登录
         if (!StpUtil.isLogin()) {
             throw new BusinessException(ErrorCode.NO_LOGIN);
         }
-
         // 获取当前用户ID
         long userId = StpUtil.getLoginIdAsLong();
-        
-        // 查询用户信息
-        UserInfo currentUser = this.getById(userId);
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
-        }
 
-        // 脱敏处理，不返回密码等敏感信息
-        currentUser.setPassword(null);
-        return currentUser;
+        return convertVoFromUserInfo(userId);
     }
 
     @Override
-    public boolean updateCurrentUser(UserUpdateRequest userUpdateRequest) {
+    public UserInfoVO updateCurrentUser(UserUpdateRequest userUpdateRequest) {
+        long userId = StpUtil.getLoginIdAsLong();
         // 检查是否已登录
         if (!StpUtil.isLogin()) {
             throw new BusinessException(ErrorCode.NO_LOGIN);
@@ -214,18 +216,18 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         // 调用请求体自身的校验方法
         userUpdateRequest.check();
         // 获取当前用户ID
-        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest, null);
+        UserInfo updateUserInfo = getUpdateUserInfo(userUpdateRequest, userId);
         // 使用MyBatis-Plus的updateById方法更新
         boolean updateResult = this.updateById(updateUserInfo);
         if (!updateResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户信息失败");
         }
 
-        return true;
+        return convertVoFromUserInfo(userId);
     }
 
     @Override
-    public boolean adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest) {
+    public UserInfoVO adminUpdateUser(Long userId, UserUpdateRequest userUpdateRequest) {
         // 检查是否已登录
         if (!StpUtil.isLogin()) {
             throw new BusinessException(ErrorCode.NO_LOGIN);
@@ -253,14 +255,124 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户信息失败");
         }
 
+        return convertVoFromUserInfo(userId);
+    }
+
+    @Override
+    public PageResponse<UserInfoVO> getAllUsers(PageRequest pageRequest) {
+        // 参数校验和默认值设置
+        if (pageRequest == null) {
+            pageRequest = new PageRequest();
+        }
+        
+        int pageNum = pageRequest.getPageNum() != null ? pageRequest.getPageNum() : 1;
+        int pageSize = pageRequest.getPageSize() != null ? pageRequest.getPageSize() : 10;
+        
+        // 确保页码和每页大小合法
+        pageNum = Math.max(1, pageNum);
+        pageSize = Math.clamp(pageSize, 1, 100);
+        
+        // 查询总记录数
+        LambdaQueryWrapper<UserInfo> countWrapper = new LambdaQueryWrapper<>();
+        Long total = this.count(countWrapper);
+        
+        // 分页查询用户信息，按 ID 升序
+        LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByAsc(UserInfo::getId);
+        
+        // 计算偏移量和限制
+        int offset = (pageNum - 1) * pageSize;
+        queryWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
+        
+        List<UserInfo> userList = this.list(queryWrapper);
+        
+        // 转换为 VO 对象
+        List<UserInfoVO> userInfoVOList = new ArrayList<>(userList.size());
+        for (UserInfo userInfo : userList) {
+            UserInfoVO userInfoVO = new UserInfoVO();
+            BeanUtils.copyProperties(userInfo, userInfoVO);
+            String avatarUrl = userInfo.getAvatar();
+            if (StringUtils.isNotBlank(avatarUrl)) {
+                userInfoVO.setAvatar(minioService.getFileUrl(avatarUrl));
+            }
+            userInfoVOList.add(userInfoVO);
+        }
+
+        // todo 根据传入特定字段信息去过滤实现查询分页
+        
+        // 构建分页响应
+        return new PageResponse<>(pageNum, pageSize, total, userInfoVOList);
+    }
+
+    @Override
+    public boolean deleteUser(Long userId) {
+        // 参数校验
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS);
+        }
+        
+        // 查询用户是否存在
+        UserInfo userInfo = this.getById(userId);
+        if (userInfo == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
+        }
+        
+        // 检查当前登录用户是否有权限删除该用户
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        if (!currentUserId.equals(userId)) {
+            // 如果不是删除自己，需要检查权限
+            UserInfo currentUser = this.getById(currentUserId);
+            if (currentUser == null) {
+                throw new BusinessException(ErrorCode.NO_LOGIN);
+            }
+            // 不能删除比自己权限高或者同级别的用户
+            if (!StpUtil.hasRole(UserRoleEnum.ADMIN.getValue())
+                    && UserRoleEnum.TEACHER.getLabel() <= userInfo.getRole().getLabel()) {
+                log.warn("当前用户角色为 {}, 没有权限删除其他用户", UserRoleEnum.TEACHER.getDescription());
+                throw new BusinessException(ErrorCode.NO_AUTHORITY_ALTER, "没有权限删除当前用户信息！");
+            }
+        }
+        
+        // 软删除：将状态设置为 1（封禁）
+        userInfo.setStatus(1);
+        boolean updateResult = this.updateById(userInfo);
+        
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除用户失败");
+        }
+        
+        log.info("用户已被软删除：userId={}, username={}", userId, userInfo.getUsername());
         return true;
     }
 
-    private UserInfo getUpdateUserInfo(UserUpdateRequest userUpdateRequest, Long userId) {
-        if (userId == null) {
-            userId = StpUtil.getLoginIdAsLong();
-        }
+    @Override
+    public UserInfoVO updateUserAvatar(Long userId, MultipartFile file) {
 
+        UserInfo userInfo = this.getById(userId);
+        if (userInfo == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NO_USERINFO, "用户不存在");
+        }
+        String oldAvatar = userInfo.getAvatar();
+
+        // 调用 MinIO 服务上传文件
+        String avatarUrl = minioService.uploadFile(file, "avatar");
+
+        // 更新当前用户的头像信息
+        UserUpdateRequest userUpdateRequest = new UserUpdateRequest();
+        userUpdateRequest.setAvatar(avatarUrl);
+        UserInfoVO updateUser = this.adminUpdateUser(userId, userUpdateRequest);
+        if (updateUser == null) {
+            // 如果更新失败，则删除上传的图片文件
+            minioService.removeFile(avatarUrl);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新用户头像失败");
+        }
+        // 删除老的头像文件
+        minioService.removeFile(oldAvatar);
+
+        return updateUser;
+    }
+
+    private UserInfo getUpdateUserInfo(UserUpdateRequest userUpdateRequest, Long userId) {
         // 构造更新条件
         UserInfo updateUserInfo = new UserInfo();
         updateUserInfo.setId(userId);
@@ -318,84 +430,17 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo>
         return updateUserInfo;
     }
 
-    @Override
-    public PageResponse<UserInfoVO> getAllUsers(PageRequest pageRequest) {
-        // 参数校验和默认值设置
-        if (pageRequest == null) {
-            pageRequest = new PageRequest();
-        }
-        
-        int pageNum = pageRequest.getPageNum() != null ? pageRequest.getPageNum() : 1;
-        int pageSize = pageRequest.getPageSize() != null ? pageRequest.getPageSize() : 10;
-        
-        // 确保页码和每页大小合法
-        pageNum = Math.max(1, pageNum);
-        pageSize = Math.clamp(pageSize, 1, 100);
-        
-        // 查询总记录数
-        LambdaQueryWrapper<UserInfo> countWrapper = new LambdaQueryWrapper<>();
-        Long total = this.count(countWrapper);
-        
-        // 分页查询用户信息，按 ID 升序
-        LambdaQueryWrapper<UserInfo> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByAsc(UserInfo::getId);
-        
-        // 计算偏移量和限制
-        int offset = (pageNum - 1) * pageSize;
-        queryWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
-        
-        List<UserInfo> userList = this.list(queryWrapper);
-        
-        // 转换为 VO 对象（UserInfoVO 本身就不包含 password 字段）
-        List<UserInfoVO> userInfoVOList = new ArrayList<>(userList.size());
-        for (UserInfo userInfo : userList) {
-            UserInfoVO userInfoVO = new UserInfoVO();
-            BeanUtils.copyProperties(userInfo, userInfoVO);
-            userInfoVOList.add(userInfoVO);
-        }
-        
-        // 构建分页响应
-        return new PageResponse<>(pageNum, pageSize, total, userInfoVOList);
-    }
-
-    @Override
-    public boolean deleteUser(Long userId) {
-        // 参数校验
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.BAD_PARAMS);
-        }
-        
-        // 查询用户是否存在
+    private UserInfoVO convertVoFromUserInfo(Long userId) {
         UserInfo userInfo = this.getById(userId);
         if (userInfo == null) {
-            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在");
+            throw new BusinessException(ErrorCode.RESOURCE_NO_USERINFO, "用户不存在");
         }
-        
-        // 检查当前登录用户是否有权限删除该用户
-        Long currentUserId = StpUtil.getLoginIdAsLong();
-        if (!currentUserId.equals(userId)) {
-            // 如果不是删除自己，需要检查权限
-            UserInfo currentUser = this.getById(currentUserId);
-            if (currentUser == null) {
-                throw new BusinessException(ErrorCode.NO_LOGIN);
-            }
-            // 不能删除比自己权限高或者同级别的用户
-            if (!StpUtil.hasRole(UserRoleEnum.ADMIN.getValue())
-                    && UserRoleEnum.TEACHER.getLabel() <= userInfo.getRole().getLabel()) {
-                log.warn("当前用户角色为 {}, 没有权限删除其他用户", UserRoleEnum.TEACHER.getDescription());
-                throw new BusinessException(ErrorCode.NO_AUTHORITY_ALTER, "没有权限删除当前用户信息！");
-            }
+        UserInfoVO userInfoVO = new UserInfoVO();
+        BeanUtils.copyProperties(userInfo, userInfoVO);
+        String avatarUrl = userInfo.getAvatar();
+        if (StringUtils.isNotBlank(avatarUrl)) {
+            userInfoVO.setAvatar(minioService.getFileUrl(avatarUrl));
         }
-        
-        // 软删除：将状态设置为 1（封禁）
-        userInfo.setStatus(1);
-        boolean updateResult = this.updateById(userInfo);
-        
-        if (!updateResult) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除用户失败");
-        }
-        
-        log.info("用户已被软删除：userId={}, username={}", userId, userInfo.getUsername());
-        return true;
+        return userInfoVO;
     }
 }

@@ -1,6 +1,6 @@
-package com.zhy.auraojbackend.model.dto.user;
+package com.zhy.auraojbackend.model.dto.user.response;
 
-import com.zhy.auraojbackend.model.dto.BaseUserInfo;
+import com.zhy.auraojbackend.model.dto.user.BaseUserInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
