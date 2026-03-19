@@ -13,6 +13,7 @@ import com.zhy.auraojbackend.exception.ThrowUtils;
 import com.zhy.auraojbackend.mapper.ProblemMapper;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.problem.BaseProblemInfo;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
 import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
@@ -201,6 +202,26 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         return response;
     }
 
+    @Override
+    public BaseProblemInfo getProblemById(Long problemId) {
+        log.info("查询题目详情，problemId: {}", problemId);
+        
+        // 1. 根据 ID 查询题目
+        Problem problem = this.getById(problemId);
+        ThrowUtils.throwIf(problem == null, ErrorCode.RESOURCE_NO_PROBLEM, "题目不存在");
+        
+        // 2. 转换为 BaseProblemInfo
+        BaseProblemInfo baseProblemInfo = new BaseProblemInfo();
+        BeanUtils.copyProperties(problem, baseProblemInfo);
+        
+        // 3. 查询关联标签信息
+        List<TagInfo> tagList = getTagListByProblemId(problemId);
+        baseProblemInfo.setTags(tagList);
+        
+        log.info("查询题目详情成功，题目 ID: {}", problemId);
+        return baseProblemInfo;
+    }
+
     /**
      * 将 Problem 实体转换为 QueryAllProblemResponse 对象
      */
@@ -211,7 +232,7 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         // 查询关联标签信息
         List<TagInfo> tagList = getTagListByProblemId(problem.getId());
         response.setTags(tagList);
-            
+
         return response;
     }
     

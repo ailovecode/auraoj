@@ -1,6 +1,5 @@
 package com.zhy.auraojbackend.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import com.zhy.auraojbackend.common.ErrorCode;
@@ -8,6 +7,7 @@ import com.zhy.auraojbackend.common.Result;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.problem.BaseProblemInfo;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
 import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
@@ -94,7 +94,6 @@ public class ProblemManagerController {
     @Operation(summary = "搜索题目", description = "根据题目名称或题号搜索题目")
     @ApiResponse(responseCode = "200", description = "查询成功",
             content = @Content(schema = @Schema(implementation = Result.class)))
-    @SaCheckLogin
     public Result<PageResponse<QueryAllProblemResponse>> searchProblems(
             @Parameter(description = "页码，默认 1") @RequestParam(defaultValue = "1") Integer pageNum,
             @Parameter(description = "每页大小，默认 10") @RequestParam(defaultValue = "10") Integer pageSize,
@@ -108,6 +107,25 @@ public class ProblemManagerController {
             return Result.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("搜索题目异常 - 系统异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @GetMapping("/get/{problemId}")
+    @Operation(summary = "查询题目详情", description = "根据题目 ID 查询题目详情")
+    @ApiResponse(responseCode = "200", description = "查询成功",
+            content = @Content(schema = @Schema(implementation = Result.class)))
+    public Result<BaseProblemInfo> getProblemDetail(
+            @Parameter(description = "题目 ID") @PathVariable Long problemId,
+            HttpServletRequest request) {
+        try {
+            BaseProblemInfo result = problemService.getProblemById(problemId);
+            return Result.success(result);
+        } catch (BusinessException e) {
+            log.error("查询题目详情异常 - 业务异常", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("查询题目详情异常 - 系统异常", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

@@ -27,6 +27,7 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(40400, "资源不存在"),
     RESOURCE_NO_USERINFO(40401, "用户信息不存在"),
     RESOURCE_NO_TAG(40402, "标签不存在"),
+    RESOURCE_NO_PROBLEM(40403, "未找到错误信息"),
 
     // --- 服务端错误 (5xxxx) ---
     // 500xx: 系统类

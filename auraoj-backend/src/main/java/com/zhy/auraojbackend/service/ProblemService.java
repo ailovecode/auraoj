@@ -3,6 +3,7 @@ package com.zhy.auraojbackend.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.problem.BaseProblemInfo;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
 import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
@@ -37,4 +38,11 @@ public interface ProblemService extends IService<Problem> {
      * @return 分页后的题目列表
      */
     PageResponse<QueryAllProblemResponse> searchProblems(Integer pageNum, Integer pageSize, SearchProblemsRequest searchProblemsRequest);
+
+    /**
+     * 根据题目 ID 查询题目详情
+     * @param problemId 题目 ID
+     * @return 题目详情
+     */
+    BaseProblemInfo getProblemById(Long problemId);
 }

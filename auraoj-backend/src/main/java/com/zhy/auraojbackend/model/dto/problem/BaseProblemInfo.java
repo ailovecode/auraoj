@@ -45,9 +45,13 @@ public class BaseProblemInfo {
     private String dataScope;
 
     /**
-     * 判题配置 {"timeLimit": 1000, "memoryLimit": 128}
+     * 时间限制 (单位：ms)
      */
-    private String judgeConfig;
+    private String timeLimit;
+
+    /**
+     * 内存限制 (单位：MB)
+     */
 
     /**
      * 难度等级：easy/medium/hard
