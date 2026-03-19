@@ -9,10 +9,8 @@ import {
   Table,
   TableColumn,
   Pagination,
-  Select,
   Message
 } from '@arco-design/web-vue'
-import { IconRefresh } from '@arco-design/web-vue/es/icon'
 import { searchProblem } from '@/api/problem'
 import type { AdminProblemInfo, DifficultyLevel, ProblemSearchRequest } from '@/types/problem'
 import { listAllTags } from '@/api/tag'
@@ -25,6 +23,7 @@ const pageSize = ref(20)
 const total = ref(0)
 const problemList = ref<AdminProblemInfo[]>([])
 const tagOptions = ref<TagInfo[]>([])
+const difficultyFilter = ref('')
 
 const searchForm = ref<ProblemSearchRequest>({
   title: '',
@@ -37,6 +36,13 @@ const difficultyOptions = [
   { label: '简单', value: "easy" },
   { label: '中等', value: "medium" },
   { label: '困难', value: "hard" }
+]
+
+const filterOptions = [
+  { text: '全部难度', value: '' },
+  { text: '简单', value: 'easy' },
+  { text: '中等', value: 'medium' },
+  { text: '困难', value: 'hard' }
 ]
 
 const getDifficultyText = (difficulty?: DifficultyLevel): string => {
@@ -101,6 +107,7 @@ const handleReset = () => {
   searchForm.value.title = ''
   searchForm.value.difficulty = undefined
   searchForm.value.tagId = undefined
+  difficultyFilter.value = ''
   pageNum.value = 1
   fetchProblemList()
 }
@@ -117,7 +124,11 @@ const handlePageSizeChange = (size: number) => {
 }
 
 const handleProblemClick = (problem: AdminProblemInfo) => {
-  Message.info(`点击题目：${problem.title}`)
+  router.push(`/problem/${problem.id}`)
+}
+
+const handleDifficultyFilter = (value: string) => {
+  difficultyFilter.value = value
 }
 
 const filteredProblemList = computed(() => {
@@ -128,7 +139,8 @@ const filteredProblemList = computed(() => {
     const matchDifficulty = !searchForm.value.difficulty || problem.difficulty === searchForm.value.difficulty
     const matchTag = !searchForm.value.tagId ||
       (problem.tags && problem.tags.some((tag) => tag.id === searchForm.value.tagId))
-    return matchKeyword && matchDifficulty && matchTag
+    const matchColumnFilter = !difficultyFilter.value || problem.difficulty === difficultyFilter.value
+    return matchKeyword && matchDifficulty && matchTag && matchColumnFilter
   })
 })
 
@@ -145,18 +157,6 @@ onMounted(() => {
         <div class="search-input-wrapper">
           <Input.Search v-model="searchForm.title" placeholder="输入题号/题目名按回车搜索..." :search-button="false"
             @search="handleSearch" class="search-input" />
-          <Button type="primary" class="tag-filter-btn">
-            <template #icon>
-              <IconRefresh />
-            </template>
-            查看全部标签
-          </Button>
-        </div>
-        <div class="filter-row">
-          <Select v-model="searchForm.difficulty" :options="difficultyOptions" placeholder="全部难度" class="filter-select"
-            allow-clear />
-          <Select v-model="searchForm.tagId" :options="tagOptions.map(tag => ({ label: tag.name, value: tag.id }))"
-            placeholder="选择标签" class="filter-select" allow-clear />
           <Button @click="handleSearch">搜索</Button>
           <Button @click="handleReset">重置</Button>
         </div>
@@ -164,11 +164,6 @@ onMounted(() => {
     </Card>
 
     <Card class="table-card" :bordered="false">
-      <div class="pagination-wrapper">
-        <Pagination :total="total" :current="pageNum" :page-size="pageSize" :show-total="true" :show-page-size="true"
-          :page-size-options="[10, 20, 50, 100]" @change="handlePageChange" @page-size-change="handlePageSizeChange"
-          size="large" />
-      </div>
       <Table :loading="loading" :data="filteredProblemList" :pagination="false" stripe row-key="id" :scroll="{ x: 800 }"
         class="problem-table">
         <template #columns>
@@ -189,7 +184,10 @@ onMounted(() => {
               </div>
             </template>
           </TableColumn>
-          <TableColumn title="难度" width="100">
+          <TableColumn title="难度" data-index="difficulty" width="120" :filterable="{
+            filters: filterOptions,
+            filter: (value: string) => handleDifficultyFilter(value)
+          }">
             <template #cell="{ record }">
               <Tag :color="getDifficultyColor(record.difficulty)" size="small">
                 {{ getDifficultyText(record.difficulty) }}
@@ -255,20 +253,6 @@ onMounted(() => {
 
 .search-input :deep(.arco-input-group) {
   border-radius: 24px;
-}
-
-.tag-filter-btn {
-  border-radius: 20px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.filter-select {
-  width: 150px;
 }
 
 .table-card {

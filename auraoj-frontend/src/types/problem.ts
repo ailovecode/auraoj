@@ -1,3 +1,5 @@
+import type { TagInfo } from "./tagInfo"
+
 // 难度等级类型
 export type DifficultyLevel = "easy" | "medium" | "hard"
 
@@ -18,16 +20,6 @@ export interface BaseProblemInfo {
   sampleOutput: string
   sampleInput: string
   tags: TagInfo[]
-}
-
-// 标签信息
-export interface TagInfo {
-  id: number
-  name: string
-  classification: number
-  creatorId: number
-  gmtCreate: string
-  gmtModified: string
 }
 
 // 后台管理题目列表信息
@@ -83,4 +75,10 @@ export interface ProblemSearchRequest {
   title?: string
   difficulty?: DifficultyLevel
   tagId?: number
+}
+
+export interface GetProblemRes {
+  code: number
+  data: BaseProblemInfo
+  message: string
 }

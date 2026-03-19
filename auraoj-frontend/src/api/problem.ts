@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { QueryAllProblemRes, ProblemAddRequest, ProblemAddRes, ProblemSearchRequest } from '@/types/problem'
+import type { QueryAllProblemRes, ProblemAddRequest, ProblemAddRes, ProblemSearchRequest, GetProblemRes } from '@/types/problem'
 
 export function queryAllProblems(
   pageNum: number,
@@ -20,4 +20,8 @@ export function searchProblem(
   params: ProblemSearchRequest
 ): Promise<QueryAllProblemRes> {
   return request.post(`/problem/search?pageNum=${pageNum}&pageSize=${pageSize}`, params)
+}
+
+export function getProblemDetail(problemId: number): Promise<GetProblemRes> {
+  return request.get(`/problem/get/${problemId}`);
 }

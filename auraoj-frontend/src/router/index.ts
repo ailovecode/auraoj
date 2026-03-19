@@ -23,6 +23,11 @@ const router = createRouter({
           component: () => import('@/views/home/ProblemList.vue')
         },
         {
+          path: 'problem/:id',
+          name: 'problem-detail',
+          component: () => import('@/views/home/DoingQuestion.vue')
+        },
+        {
           path: 'submission',
           name: 'submission',
           component: {
