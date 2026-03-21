@@ -172,9 +172,6 @@ const renderMarkdown = (text?: string) => {
 
             <div class="problem-content" v-if="problemData">
               <div class="panel-header">
-                <!-- <Button type="text" @click="handleBack" class="inner-back-btn" size="small">
-                  ← 返回题目列表
-                </Button> -->
 
                 <TypographyTitle :heading="3" class="problem-title">
                   {{ problemData.id }}. {{ problemData.title }}
@@ -184,8 +181,8 @@ const renderMarkdown = (text?: string) => {
                   <Tag :color="getDifficultyColor(problemData.difficulty)" class="lc-tag lc-difficulty-tag">
                     {{ getDifficultyText(problemData.difficulty) }}
                   </Tag>
-                  <Tag class="lc-tag">时间: {{ problemData.judgeConfig?.timeLimit }}ms</Tag>
-                  <Tag class="lc-tag">内存: {{ problemData.judgeConfig?.memoryLimit }}MB</Tag>
+                  <Tag class="lc-tag">时间: {{ problemData.timeLimit }}ms</Tag>
+                  <Tag class="lc-tag">内存: {{ problemData.memoryLimit }}MB</Tag>
                 </Space>
               </div>
               <div class="md-content" v-html="renderMarkdown(problemData.description)"></div>
@@ -297,8 +294,8 @@ const renderMarkdown = (text?: string) => {
 <style scoped>
 /* ==================== 1. 全局与布局基座 ==================== */
 .doing-question-page {
-  /* 完美贴合：屏幕总高度 减去 顶部导航栏的 60px */
   height: calc(100vh - 60px);
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: #f0f2f5;
@@ -410,7 +407,7 @@ const renderMarkdown = (text?: string) => {
 .panel-header {
   padding: 12px 16px;
   border-bottom: 1px solid #f2f3f5;
-  background: #fafafa;
+  background: #ffffff;
 }
 
 .lc-tag {

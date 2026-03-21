@@ -6,6 +6,17 @@
 </template>
 
 <style>
+html,
+body,
+#app {
+  height: 100%;
+  /* 确保页面整体占满高度 */
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* 防止外部滚动条出现 */
+}
+
 * {
   margin: 0;
   padding: 0;

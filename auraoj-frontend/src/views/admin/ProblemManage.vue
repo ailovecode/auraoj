@@ -38,15 +38,15 @@ const problemList = ref<AdminProblemInfo[]>([])
 // 搜索表单模型
 const searchForm = ref({
   title: '',
-  difficulty: '' as number | '',
+  difficulty: '' as string | '',
   status: '' as number | ''
 })
 
 const difficultyOptions = [
   { label: '全部', value: '' },
-  { label: '简单', value: 1 },
-  { label: '中等', value: 2 },
-  { label: '困难', value: 3 }
+  { label: '简单', value: 'easy' },
+  { label: '中等', value: 'medium' },
+  { label: '困难', value: 'hard' }
 ]
 
 const statusOptions = [
@@ -59,7 +59,7 @@ const statusOptions = [
 const filteredProblemList = computed(() => {
   return problemList.value.filter((problem) => {
     const matchTitle = !searchForm.value.title || problem.title.toLowerCase().includes(searchForm.value.title.toLowerCase())
-    const matchDifficulty = searchForm.value.difficulty === '' || problem.difficulty === Number(searchForm.value.difficulty)
+    const matchDifficulty = searchForm.value.difficulty === '' || problem.difficulty === searchForm.value.difficulty
     const matchStatus = searchForm.value.status === '' || Number(problem.status) === Number(searchForm.value.status)
     return matchTitle && matchDifficulty && matchStatus
   })
@@ -261,7 +261,7 @@ onMounted(() => {
               {{ rowIndex + 1 }}
             </template>
           </TableColumn>
-          <TableColumn data-index="title" title="题目名称" :width="80" />
+          <TableColumn data-index="title" title="题目名称" :width="120" />
           <!-- <TableColumn title="题目信息" :width="250">
             <template #cell="{ record }">
               <div class="problem-info-cell">

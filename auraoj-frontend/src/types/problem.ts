@@ -11,7 +11,8 @@ export interface BaseProblemInfo {
   inputDesc: string
   outputDesc: string
   dataScope: string
-  judgeConfig: string
+  timeLimit: number
+  memoryLimit: number
   difficulty: DifficultyLevel
   submitNum: number
   acceptNum: number
