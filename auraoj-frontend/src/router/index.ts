@@ -81,6 +81,16 @@ const router = createRouter({
           component: () => import('@/views/admin/AddProblem.vue')
         },
         {
+          path: 'problem/edit/:id',
+          name: 'adminEditProblem',
+          component: () => import('@/views/admin/AddProblem.vue')
+        },
+        {
+          path: 'problem/:problemId/testdata',
+          name: 'adminTestData',
+          component: () => import('@/views/admin/TestDataManage.vue')
+        },
+        {
           path: 'submission',
           name: 'adminSubmission',
           component: {

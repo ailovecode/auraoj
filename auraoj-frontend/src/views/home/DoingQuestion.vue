@@ -7,7 +7,8 @@ import {
 import { IconRefresh, IconPlayArrow } from '@arco-design/web-vue/es/icon'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { getProblemDetail } from '@/api/problem'
-import type { BaseProblemInfo, DifficultyLevel } from '@/types/problem'
+import type { BaseProblemInfo } from '@/types/problem'
+import { getDifficultyText, getDifficultyColor } from '@/utils/format'
 
 // 引入 marked 和 KaTeX 插件
 import { marked } from 'marked'
@@ -45,17 +46,17 @@ const languageMap: Record<string, string> = {
 }
 
 const defaultCode: Record<string, string> = {
-  java: `public class Solution {
-    public static void main(String[] args) {
-        // 请在此编写代码
-    }
-}`,
   cpp: `#include <iostream>
 using namespace std;
 
 int main() {
     // 请在此编写代码
     return 0;
+}`,
+  java: `public class Main {
+    public static void main(String[] args) {
+        // 请在此编写代码
+    }
 }`,
   python: `# 请在此编写代码
 def main():
@@ -70,24 +71,6 @@ function solution() {
 }
 
 const editorCode = ref(defaultCode.java)
-
-const getDifficultyText = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case 'easy': return '简单'
-    case 'medium': return '中等'
-    case 'hard': return '困难'
-    default: return '未知'
-  }
-}
-
-const getDifficultyColor = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case 'easy': return 'green'
-    case 'medium': return 'orange'
-    case 'hard': return 'red'
-    default: return 'gray'
-  }
-}
 
 const fetchProblemDetail = async () => {
   const problemId = route.params.id as string
@@ -119,11 +102,11 @@ const fetchProblemDetail = async () => {
 
 const handleLanguageChange = (value: string) => {
   selectedLanguage.value = value
-  editorCode.value = defaultCode[value as keyof typeof defaultCode] || defaultCode.java
+  editorCode.value = defaultCode[value as keyof typeof defaultCode] || defaultCode.cpp
 }
 
 const handleResetCode = () => {
-  editorCode.value = defaultCode[selectedLanguage.value as keyof typeof defaultCode] || defaultCode.java
+  editorCode.value = defaultCode[selectedLanguage.value as keyof typeof defaultCode] || defaultCode.cpp
   Message.success('代码已重置')
 }
 

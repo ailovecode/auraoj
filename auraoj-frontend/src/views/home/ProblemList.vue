@@ -12,9 +12,10 @@ import {
   Message
 } from '@arco-design/web-vue'
 import { searchProblem } from '@/api/problem'
-import type { AdminProblemInfo, DifficultyLevel, ProblemSearchRequest } from '@/types/problem'
+import type { AdminProblemInfo, ProblemSearchRequest } from '@/types/problem'
 import { listAllTags } from '@/api/tag'
 import type { TagInfo } from '@/types/tagInfo'
+import { getDifficultyText, getDifficultyColor } from '@/utils/format'
 
 const router = useRouter()
 const loading = ref(false)
@@ -44,32 +45,6 @@ const filterOptions = [
   { text: '中等', value: 'medium' },
   { text: '困难', value: 'hard' }
 ]
-
-const getDifficultyText = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case "easy":
-      return '简单'
-    case "medium":
-      return '中等'
-    case "hard":
-      return '困难'
-    default:
-      return '未知'
-  }
-}
-
-const getDifficultyColor = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case "easy":
-      return 'green'
-    case "medium":
-      return 'orange'
-    case "hard":
-      return 'red'
-    default:
-      return 'gray'
-  }
-}
 
 const fetchProblemList = async () => {
   loading.value = true

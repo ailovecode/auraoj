@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import {
   Card,
   Button,
@@ -20,24 +20,33 @@ import {
 import { IconLeft, IconPlus } from '@arco-design/web-vue/es/icon'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
-// 注意：以下 API 和类型路径请根据你的实际项目路径确认
-import { addProblem } from '@/api/problem'
+import { addProblem, updateProblem, getProblemDetail } from '@/api/problem'
 import { listAllTags, addTag } from '@/api/tag'
-import type { ProblemAddRequest } from '@/types/problem'
+import type { ProblemAddRequest, UpdateProblemRequest } from '@/types/problem'
 import type { TagInfo, AddTagReq } from '@/types/tagInfo'
 
 const router = useRouter()
+const route = useRoute()
+
 const formRef = ref()
 const submitting = ref(false)
+const loading = ref(false)
 const tagOptions = ref<TagInfo[]>([])
 const loadingTags = ref(false)
+
+// 判断是编辑模式还是新增模式
+const isEditMode = computed(() => !!route.params.id)
+const pageTitle = computed(() => isEditMode.value ? '编辑题目' : '新建题目')
+
+// 原始数据（用于比较哪些字段被修改）
+const originalData = ref<Partial<ProblemAddRequest & { status: number }>>({})
 
 // 新建标签弹窗相关
 const addTagModalVisible = ref(false)
 const addTagFormRef = ref()
 const addTagForm = reactive<AddTagReq>({
   name: '',
-  classification: 2 // 默认选择知识点
+  classification: 2
 })
 const addingTag = ref(false)
 
@@ -61,7 +70,7 @@ const formData = reactive<ProblemAddRequest & { status: number }>({
   dataScope: '',
   sampleInput: '',
   sampleOutput: '',
-  difficulty: 1,
+  difficulty: 'easy',
   tagIds: [],
   status: 1
 })
@@ -77,9 +86,9 @@ const rules = {
 }
 
 const difficultyOptions = [
-  { label: '简单', value: 1 },
-  { label: '中等', value: 2 },
-  { label: '困难', value: 3 }
+  { label: '简单', value: 'easy' },
+  { label: '中等', value: 'medium' },
+  { label: '困难', value: 'hard' }
 ]
 
 const statusOptions = [
@@ -99,6 +108,50 @@ const fetchTags = async (tagName?: string) => {
     console.error('获取标签失败:', error)
   } finally {
     loadingTags.value = false
+  }
+}
+
+const fetchProblemDetail = async (problemId: number) => {
+  loading.value = true
+  try {
+    const res = await getProblemDetail(problemId)
+    if (res.code === 200 && res.data) {
+      const data = res.data
+      // 回显表单数据
+      formData.title = data.title
+      formData.timeLimit = data.timeLimit
+      formData.memoryLimit = data.memoryLimit
+      formData.description = data.description
+      formData.inputDesc = data.inputDesc
+      formData.outputDesc = data.outputDesc
+      formData.dataScope = data.dataScope || ''
+      formData.sampleInput = data.sampleInput || ''
+      formData.sampleOutput = data.sampleOutput || ''
+      formData.difficulty = data.difficulty
+      formData.tagIds = data.tags?.map(tag => tag.id) || []
+
+      // 保存原始数据用于后续比较
+      originalData.value = {
+        title: data.title,
+        timeLimit: data.timeLimit,
+        memoryLimit: data.memoryLimit,
+        description: data.description,
+        inputDesc: data.inputDesc,
+        outputDesc: data.outputDesc,
+        dataScope: data.dataScope || '',
+        sampleInput: data.sampleInput || '',
+        sampleOutput: data.sampleOutput || '',
+        difficulty: data.difficulty,
+        tagIds: data.tags?.map(tag => tag.id) || []
+      }
+    } else {
+      Message.error(res.message || '获取题目详情失败')
+    }
+  } catch (error) {
+    console.error('获取题目详情失败:', error)
+    Message.error('获取题目详情失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -123,7 +176,6 @@ const handleAddTagSubmit = async () => {
     if (res.code === 200) {
       Message.success('标签创建成功')
       addTagModalVisible.value = false
-      // 重新加载标签列表
       fetchTags()
     } else {
       Message.error(res.message || '创建失败')
@@ -140,21 +192,108 @@ const handleAddTagCancel = () => {
   addTagModalVisible.value = false
 }
 
+// 比较两个值是否相等（考虑 undefined 的情况）
+const isValueChanged = (newVal: any, oldVal: any): boolean => {
+  // 如果两个都是 undefined，认为没变化
+  if (newVal === undefined && oldVal === undefined) return false
+  // 如果只有一个是 undefined，说明有变化
+  if (newVal === undefined || oldVal === undefined) return true
+  // 如果是数组，比较长度和每个元素
+  if (Array.isArray(newVal) && Array.isArray(oldVal)) {
+    if (newVal.length !== oldVal.length) return true
+    return newVal.some((val, idx) => val !== oldVal[idx])
+  }
+  // 普通比较
+  return newVal !== oldVal
+}
+
+// 构建更新参数，只包含变化的字段
+const buildUpdateParams = (): UpdateProblemRequest | null => {
+  const problemId = Number(route.params.id)
+  if (!problemId) return null
+
+  const updateData: UpdateProblemRequest = {
+    id: problemId
+  }
+
+  // 比较每个字段
+  if (isValueChanged(formData.title, originalData.value.title)) {
+    updateData.title = formData.title
+  }
+  if (isValueChanged(formData.timeLimit, originalData.value.timeLimit)) {
+    updateData.timeLimit = formData.timeLimit
+  }
+  if (isValueChanged(formData.memoryLimit, originalData.value.memoryLimit)) {
+    updateData.memoryLimit = formData.memoryLimit
+  }
+  if (isValueChanged(formData.description, originalData.value.description)) {
+    updateData.description = formData.description
+  }
+  if (isValueChanged(formData.inputDesc, originalData.value.inputDesc)) {
+    updateData.inputDesc = formData.inputDesc
+  }
+  if (isValueChanged(formData.outputDesc, originalData.value.outputDesc)) {
+    updateData.outputDesc = formData.outputDesc
+  }
+  if (isValueChanged(formData.dataScope, originalData.value.dataScope)) {
+    updateData.dataScope = formData.dataScope
+  }
+  if (isValueChanged(formData.sampleInput, originalData.value.sampleInput)) {
+    updateData.sampleInput = formData.sampleInput
+  }
+  if (isValueChanged(formData.sampleOutput, originalData.value.sampleOutput)) {
+    updateData.sampleOutput = formData.sampleOutput
+  }
+  if (isValueChanged(formData.difficulty, originalData.value.difficulty)) {
+    updateData.difficulty = formData.difficulty
+  }
+  if (isValueChanged(formData.status, originalData.value.status)) {
+    updateData.status = formData.status
+  }
+  if (isValueChanged(formData.tagIds, originalData.value.tagIds)) {
+    updateData.tagIds = formData.tagIds
+  }
+
+  // 检查是否有任何字段被修改
+  const hasChanges = Object.keys(updateData).length > 1 // 除了 id 之外还有其他字段
+  return hasChanges ? updateData : null
+}
+
 const handleSubmit = async () => {
   try {
     const err = await formRef.value.validate()
-    if (err) return // 校验不通过则拦截
+    if (err) return
 
     submitting.value = true
-    const res = await addProblem(formData)
-    if (res.code === 200) {
-      Message.success('题目创建成功')
-      router.push('/admin/problem')
+
+    if (isEditMode.value) {
+      // 编辑模式：只提交修改的字段
+      const updateData = buildUpdateParams()
+      if (!updateData) {
+        Message.warning('没有任何修改，无需保存')
+        submitting.value = false
+        return
+      }
+
+      const res = await updateProblem(updateData)
+      if (res.code === 200) {
+        Message.success('题目更新成功')
+        router.push('/admin/problem')
+      } else {
+        Message.error(res.message || '更新失败')
+      }
     } else {
-      Message.error(res.message || '创建失败')
+      // 新增模式：提交完整数据
+      const res = await addProblem(formData)
+      if (res.code === 200) {
+        Message.success('题目创建成功')
+        router.push('/admin/problem')
+      } else {
+        Message.error(res.message || '创建失败')
+      }
     }
   } catch (error) {
-    console.error('创建失败:', error)
+    console.error('提交失败:', error)
   } finally {
     submitting.value = false
   }
@@ -166,6 +305,13 @@ const handleCancel = () => {
 
 onMounted(() => {
   fetchTags()
+  // 如果是编辑模式，获取题目详情
+  if (isEditMode.value) {
+    const problemId = Number(route.params.id)
+    if (problemId) {
+      fetchProblemDetail(problemId)
+    }
+  }
 })
 </script>
 
@@ -178,7 +324,7 @@ onMounted(() => {
         </template>
         返回
       </Button>
-      <span class="page-path">题目管理 / 新建题目</span>
+      <span class="page-path">题目管理 / {{ pageTitle }}</span>
     </div>
 
     <div class="form-container">
@@ -303,7 +449,7 @@ onMounted(() => {
       <Space size="medium" justify="end">
         <Button size="large" @click="handleCancel">取消</Button>
         <Button size="large" type="primary" :loading="submitting" @click="handleSubmit">
-          提交并保存
+          {{ isEditMode ? '保存修改' : '提交并保存' }}
         </Button>
       </Space>
     </div>
@@ -356,7 +502,6 @@ onMounted(() => {
 .form-card {
   width: 100%;
   max-width: 1200px;
-  /* 限制最大宽度，提高阅读体验 */
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
   padding: 16px 24px;
@@ -365,7 +510,6 @@ onMounted(() => {
 /* ----- 核心表单样式优化 ----- */
 .custom-form :deep(.arco-form-item) {
   margin-bottom: 32px;
-  /* 增大每个模块之间的纵向间距 */
 }
 
 /* 自定义标黑标题：带左侧蓝色点缀线 */
@@ -386,7 +530,6 @@ onMounted(() => {
   bottom: 0;
   width: 4px;
   background-color: rgb(var(--primary-6));
-  /* 使用 Arco 的主色调蓝 */
   border-radius: 2px;
 }
 
@@ -396,17 +539,6 @@ onMounted(() => {
   border-radius: 4px;
   overflow: hidden;
   width: 100%;
-}
-
-.full-width-input {
-  width: 100%;
-}
-
-/* 等宽字体，用于样例输入输出的对齐 */
-.monospace-input :deep(textarea) {
-  font-family: 'JetBrains Mono', 'Consolas', 'Fira Code', monospace;
-  background-color: #fafafa;
-  border: 1px solid var(--color-border-2);
 }
 
 /* 底部操作区 */
@@ -420,5 +552,12 @@ onMounted(() => {
   border-top: 1px solid var(--color-border-2);
   z-index: 10;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 等宽字体，用于样例输入输出的对齐 */
+.monospace-input :deep(textarea) {
+  font-family: 'JetBrains Mono', 'Consolas', 'Fira Code', monospace;
+  background-color: #fafafa;
+  border: 1px solid var(--color-border-2);
 }
 </style>

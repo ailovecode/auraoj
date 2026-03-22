@@ -33,6 +33,7 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { getAllUsers, updateCurrentUser, deleteUser } from '@/api/user'
 import type { UserInfo, UpdateUserParams } from '@/types/user'
+import { getUserStatusColor as getStatusTagColor, getUserStatusText as getStatusText, formatDate as formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const pageNum = ref(1)
@@ -220,26 +221,6 @@ const getRoleText = (role?: string) => {
     case 'teacher': return '老师'
     default: return '学生'
   }
-}
-
-const getStatusTagColor = (status?: number) => {
-  return status === 1 ? 'red' : 'green'
-}
-
-const getStatusText = (status?: number) => {
-  return status === 1 ? '已禁用' : '正常'
-}
-
-const formatDateTime = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 onMounted(() => {

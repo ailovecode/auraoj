@@ -72,6 +72,23 @@ export interface ProblemAddRes {
   message: string
 }
 
+// 问题更新请求（所有字段可选，但必须有题目ID）
+export interface UpdateProblemRequest {
+  id: number
+  title?: string
+  timeLimit?: number
+  memoryLimit?: number
+  description?: string
+  inputDesc?: string
+  outputDesc?: string
+  dataScope?: string
+  sampleInput?: string
+  sampleOutput?: string
+  difficulty?: DifficultyLevel
+  tagIds?: number[]
+  status?: number
+}
+
 export interface ProblemSearchRequest {
   title?: string
   difficulty?: DifficultyLevel
@@ -81,5 +98,11 @@ export interface ProblemSearchRequest {
 export interface GetProblemRes {
   code: number
   data: BaseProblemInfo
+  message: string
+}
+
+export interface DeleteProblemRes {
+  code: number
+  data: boolean
   message: string
 }
