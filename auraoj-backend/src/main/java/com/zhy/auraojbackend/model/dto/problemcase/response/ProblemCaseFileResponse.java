@@ -1,7 +1,5 @@
-package com.zhy.auraojbackend.model.entity;
+package com.zhy.auraojbackend.model.dto.problemcase.response;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -9,30 +7,28 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 题目测试样例表（存储文件路径或内容摘要）
  * @author zhy
- * @TableName problem_case
  */
-@TableName(value ="public.problem_case")
 @Data
-public class ProblemCase {
-    @TableId
-    @Schema(description = "主键id")
+@Schema(description = "测试数据文件信息")
+public class ProblemCaseFileResponse {
+
+    @Schema(description = "记录 ID")
     private Long id;
 
-    @Schema(description = "题目 id")
+    @Schema(description = "题目 ID")
     private Long problemId;
 
-    @Schema(description = "输入文件")
+    @Schema(description = "输入文件名")
     private String inputFile;
 
-    @Schema(description = "输出文件")
+    @Schema(description = "输出文件名")
     private String outputFile;
 
-    @Schema(description = "输入文件大小（字节）")
+    @Schema(description = "输入文件大小")
     private Long inputFileSize;
 
-    @Schema(description = "输出文件大小（字节）")
+    @Schema(description = "输出文件大小")
     private Long outputFileSize;
 
     @Schema(description = "状态")

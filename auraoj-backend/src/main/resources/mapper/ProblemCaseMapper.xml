@@ -9,6 +9,8 @@
             <result property="problemId" column="problem_id" jdbcType="BIGINT"/>
             <result property="inputFile" column="input_file" jdbcType="VARCHAR"/>
             <result property="outputFile" column="output_file" jdbcType="VARCHAR"/>
+            <result property="inputFileSize" column="input_file_size" jdbcType="BIGINT"/>
+            <result property="outputFileSize" column="output_file_size" jdbcType="BIGINT"/>
             <result property="status" column="status" jdbcType="SMALLINT"/>
             <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
             <result property="gmtModified" column="gmt_modified" jdbcType="TIMESTAMP"/>
@@ -16,7 +18,7 @@
 
     <sql id="Base_Column_List">
         id,problem_id,input_file,
-        output_file,status,gmt_create,
+        output_file,input_file_size,output_file_size,status,gmt_create,
         gmt_modified
     </sql>
 </mapper>

@@ -10,9 +10,6 @@ import com.zhy.auraojbackend.model.entity.TagInfo;
 import com.zhy.auraojbackend.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,8 +34,6 @@ public class TagManagerController {
 
     @GetMapping("/list")
     @Operation(summary = "查询所有标签", description = "获取系统中所有标签列表，支持按标签名模糊查询")
-    @ApiResponse(responseCode = "200", description = "查询成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<List<TagInfo>> listAllTags(
             @Parameter(description = "标签名（支持模糊查询）") 
@@ -58,8 +53,6 @@ public class TagManagerController {
 
     @PostMapping("/add")
     @Operation(summary = "新增标签", description = "新增单个标签")
-    @ApiResponse(responseCode = "200", description = "添加成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<Long> addTag(
             @Parameter(description = "新增标签请求参数") 
@@ -82,8 +75,6 @@ public class TagManagerController {
 
     @PutMapping("/update")
     @Operation(summary = "更新标签", description = "更新指定标签信息")
-    @ApiResponse(responseCode = "200", description = "更新成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<TagInfo> updateTag(
             @Parameter(description = "更新标签请求参数") 
@@ -106,8 +97,6 @@ public class TagManagerController {
 
     @DeleteMapping("/delete/{id}")
     @Operation(summary = "删除标签", description = "删除指定标签")
-    @ApiResponse(responseCode = "200", description = "删除成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<Boolean> deleteTag(
             @Parameter(description = "标签 ID", required = true) 

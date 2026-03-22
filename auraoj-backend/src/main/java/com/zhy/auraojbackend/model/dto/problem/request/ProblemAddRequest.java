@@ -31,6 +31,10 @@ public class ProblemAddRequest implements AbstractCheckRequest {
     @Schema(description = "时间限制 (毫秒)", requiredMode = Schema.RequiredMode.REQUIRED, example = "1000")
     private Integer timeLimit;
 
+    @NotNull(message = "题目状态不能为空")
+    @Schema(description = "题目状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Integer status;
+
     /**
      * 内存限制 (单位：MB)
      */

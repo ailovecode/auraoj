@@ -21,6 +21,8 @@
         <sa-token.version>1.44.0</sa-token.version>
         <knife4j.version>4.5.0</knife4j.version>
         <minio.version>8.4.3</minio.version>
+        <fastjson2.version>2.0.43</fastjson2.version>
+        <hutool.version>5.8.10</hutool.version>
     </properties>
 
     <dependencies>
@@ -98,6 +100,13 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>${minio.version}</version>
+        </dependency>
+
+        <!-- hutool -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool.version}</version>
         </dependency>
     </dependencies>
 
