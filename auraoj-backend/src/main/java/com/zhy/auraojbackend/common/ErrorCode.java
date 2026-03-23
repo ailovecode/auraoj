@@ -45,7 +45,8 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED(50300, "文件上传失败"),
     FILE_DELETE_FAILED(50301, "文件删除失败"),
     BUCKET_CREATE_FAILED(50302, "存储桶创建失败"),
-    UPLOAD_AVATAR_ERROR(50303, "上传头像失败");
+    UPLOAD_AVATAR_ERROR(50303, "上传头像失败"),
+    FILE_RENAME_FAILED(50304, "文件重命名失败");
     
     /**
      * 状态码

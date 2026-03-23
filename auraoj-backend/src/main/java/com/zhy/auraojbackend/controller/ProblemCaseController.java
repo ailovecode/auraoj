@@ -6,6 +6,7 @@ import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.common.Result;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.problemcase.request.DeleteProblemCaseFileRequest;
+import com.zhy.auraojbackend.model.dto.problemcase.request.RenameProblemCaseRequest;
 import com.zhy.auraojbackend.model.dto.problemcase.request.SingleProblemCaseUploadRequest;
 import com.zhy.auraojbackend.model.dto.problemcase.response.ProblemCaseDeleteResponse;
 import com.zhy.auraojbackend.model.dto.problemcase.response.ProblemCaseFileResponse;
@@ -27,6 +28,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * @author zhy
+ */
 @RestController
 @RequestMapping("/api/case")
 @Tag(name = "测试数据管理", description = "测试数据管理接口")
@@ -123,6 +127,22 @@ public class ProblemCaseController {
                         .toString())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
+    }
+
+    @PostMapping("/rename")
+    @Operation(summary = "重命名测试数据文件")
+    @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
+    public Result<ProblemCaseFileResponse> renameFile(@RequestBody RenameProblemCaseRequest request) {
+        try {
+            ProblemCase problemCase = problemCaseService.renameCaseFile(request.getProblemId(), request.getOldFileName(), request.getNewFileName());
+            return Result.success(toResponse(problemCase), "重命名成功，请确认是否需将对应文件重命名！");
+        } catch (BusinessException e) {
+            log.error("重命名测试数据文件失败", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("重命名测试数据文件异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
     }
 
     private ProblemCaseFileResponse toResponse(ProblemCase problemCase) {

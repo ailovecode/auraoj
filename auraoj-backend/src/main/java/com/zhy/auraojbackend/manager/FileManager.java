@@ -32,8 +32,8 @@ public class FileManager {
     private ProblemCaseService problemCaseService;
 
     private final OjConfig ojConfig;
-    private static final String INPUT_FILE_NAME = "sample_input.in";
-    private static final String OUTPUT_FILE_NAME = "sample_output.out";
+    private static final String INPUT_FILE_NAME = "sample_test.in";
+    private static final String OUTPUT_FILE_NAME = "sample_test.out";
 
 
     /**

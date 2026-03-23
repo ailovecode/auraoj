@@ -23,4 +23,6 @@ public interface ProblemCaseService extends IService<ProblemCase> {
     ProblemCaseDeleteResponse deleteCaseFile(Long problemId, String fileName);
 
     Resource loadCaseFileAsResource(Long problemId, String fileName);
+
+    ProblemCase renameCaseFile(Long problemId, String oldFileName, String newFileName);
 }

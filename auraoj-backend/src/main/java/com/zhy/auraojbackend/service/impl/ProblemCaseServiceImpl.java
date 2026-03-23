@@ -1,6 +1,7 @@
 package com.zhy.auraojbackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.config.OjConfig;
@@ -152,10 +153,14 @@ public class ProblemCaseServiceImpl extends ServiceImpl<ProblemCaseMapper, Probl
         ProblemCase problemCase = findCaseByFileName(problemId, safeFileName);
         ThrowUtils.throwIf(problemCase == null, ErrorCode.RESOURCE_NOT_FOUND, "未找到对应的测试数据文件记录");
 
+        // 1. 删除物理文件
         deletePhysicalFileIfExists(buildProblemDir(problemId).resolve(safeFileName));
 
         String pairedFileName;
-        if (safeFileName.equals(problemCase.getInputFile())) {
+        boolean isInputFile = safeFileName.equals(problemCase.getInputFile());
+
+        // 2. 判断当前删除的是输入还是输出文件，并记录配对文件名
+        if (isInputFile) {
             pairedFileName = problemCase.getOutputFile();
             problemCase.setInputFile(null);
             problemCase.setInputFileSize(null);
@@ -165,17 +170,36 @@ public class ProblemCaseServiceImpl extends ServiceImpl<ProblemCaseMapper, Probl
             problemCase.setOutputFileSize(null);
         }
 
+        // 3. 核心修复：更新数据库记录
         if (StringUtils.isBlank(problemCase.getInputFile()) && StringUtils.isBlank(problemCase.getOutputFile())) {
+            // 如果输入和输出文件都为空了，直接删除整条记录
             boolean removed = this.removeById(problemCase.getId());
             ThrowUtils.throwIf(!removed, ErrorCode.SYSTEM_ERROR, "删除测试数据记录失败");
         } else {
-            boolean updated = this.updateById(problemCase);
+            // 使用 LambdaUpdateWrapper 显式将字段更新为 null
+            LambdaUpdateWrapper<ProblemCase> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(ProblemCase::getId, problemCase.getId());
+
+            if (isInputFile) {
+                // 如果删除的是输入文件，强制将 input 相关的字段置为 null
+                updateWrapper.set(ProblemCase::getInputFile, null)
+                        .set(ProblemCase::getInputFileSize, null);
+            } else {
+                // 如果删除的是输出文件，强制将 output 相关的字段置为 null
+                updateWrapper.set(ProblemCase::getOutputFile, null)
+                        .set(ProblemCase::getOutputFileSize, null);
+            }
+
+            // 注意：第一个参数传 null，完全交给 updateWrapper 去生成包含 null 的 SET 语句
+            boolean updated = this.update(null, updateWrapper);
             ThrowUtils.throwIf(!updated, ErrorCode.SYSTEM_ERROR, "更新测试数据记录失败");
         }
 
+        // 4. 构造响应
         String reminder = StringUtils.isNotBlank(pairedFileName)
                 ? "已删除 " + safeFileName + "，请确认是否需要同时删除配对文件 " + pairedFileName
                 : "已删除 " + safeFileName;
+
         return ProblemCaseDeleteResponse.builder()
                 .deleted(Boolean.TRUE)
                 .deletedFileName(safeFileName)
@@ -194,6 +218,47 @@ public class ProblemCaseServiceImpl extends ServiceImpl<ProblemCaseMapper, Probl
         Path filePath = buildProblemDir(problemId).resolve(safeFileName);
         ThrowUtils.throwIf(!Files.exists(filePath), ErrorCode.RESOURCE_NOT_FOUND, "测试数据文件不存在");
         return new FileSystemResource(filePath);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ProblemCase renameCaseFile(Long problemId, String oldFileName, String newFileName) {
+        validateProblemId(problemId);
+        String safeOldFileName = normalizeFileName(oldFileName);
+        String safeNewFileName = normalizeFileName(newFileName);
+
+        ThrowUtils.throwIf(StringUtils.isBlank(safeOldFileName), ErrorCode.BAD_PARAMS, "原文件名不能为空");
+        ThrowUtils.throwIf(StringUtils.isBlank(safeNewFileName), ErrorCode.BAD_PARAMS, "新文件名不能为空");
+        ThrowUtils.throwIf(safeOldFileName.equals(safeNewFileName), ErrorCode.BAD_PARAMS, "新旧文件名相同，无需重命名");
+        validateCaseFileName(safeNewFileName);
+
+        ProblemCase problemCase = findCaseByFileName(problemId, safeOldFileName);
+        ThrowUtils.throwIf(problemCase == null, ErrorCode.RESOURCE_NOT_FOUND, "未找到对应的测试数据文件记录");
+
+        Path problemDir = ensureProblemDir(problemId);
+        Path oldFilePath = problemDir.resolve(safeOldFileName);
+        Path newFilePath = problemDir.resolve(safeNewFileName);
+
+        ThrowUtils.throwIf(!Files.exists(oldFilePath), ErrorCode.RESOURCE_NOT_FOUND, "原文件不存在");
+        ThrowUtils.throwIf(Files.exists(newFilePath), ErrorCode.FILE_RENAME_FAILED, "新文件名已存在");
+
+        try {
+            Files.move(oldFilePath, newFilePath);
+        } catch (IOException e) {
+            log.error("重命名测试数据文件失败：{} -> {}", safeOldFileName, safeNewFileName, e);
+            throw new BusinessException(ErrorCode.FILE_RENAME_FAILED, "重命名文件失败：" + e.getMessage());
+        }
+
+        if (safeOldFileName.equals(problemCase.getInputFile())) {
+            problemCase.setInputFile(safeNewFileName);
+        } else if (safeOldFileName.equals(problemCase.getOutputFile())) {
+            problemCase.setOutputFile(safeNewFileName);
+        }
+
+        boolean updated = this.updateById(problemCase);
+        ThrowUtils.throwIf(!updated, ErrorCode.SYSTEM_ERROR, "更新测试数据记录失败");
+
+        return problemCase;
     }
 
     private void validateProblemId(Long problemId) {
