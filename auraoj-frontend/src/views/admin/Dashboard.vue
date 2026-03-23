@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import { Card, Statistic, Row, Col } from '@arco-design/web-vue'
 import {

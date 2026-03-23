@@ -1,4 +1,4 @@
-import type { DeleteProblemCaseFileRequest, ProblemCaseDeleteResponse, ProblemCaseFileResponse, Result, SingleProblemCaseUploadRequest } from '@/types/testData'
+import type { DeleteProblemCaseFileRequest, ProblemCaseDeleteResponse, ProblemCaseFileResponse, Result, RenameTestDataRequest, SingleProblemCaseUploadRequest } from '@/types/testData'
 import request from '@/utils/request'
 
 // 获取测试数据列表
@@ -8,12 +8,12 @@ export function getTestDataList(problemId: number): Promise<Result<ProblemCaseFi
 
 // 删除测试数据
 export function deleteTestData(params: DeleteProblemCaseFileRequest): Promise<Result<ProblemCaseDeleteResponse>> {
-  return request.delete(`/case/delete`, { params })
+  return request.delete(`/case/delete`, { data:params })
 }
 
 // 重命名测试数据
-export function renameTestData(testDataId: number, newFileName: string): Promise<Result<ProblemCaseFileResponse>> {
-  return request.put(`/case/rename/${testDataId}`, { fileName: newFileName })
+export function renameTestData(params: RenameTestDataRequest): Promise<Result<ProblemCaseFileResponse>> {
+  return request.post(`/case/rename`, params)
 }
 
 // 创建测试数据

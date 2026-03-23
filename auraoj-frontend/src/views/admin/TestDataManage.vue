@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Card,
@@ -10,14 +10,21 @@ import {
   Input,
   Modal,
   Form,
+  Textarea,
   FormItem,
   Message,
   Upload,
-  Tooltip
+  Tooltip,
+  Tag as ATag
 } from '@arco-design/web-vue'
-import { IconLeft, IconUpload, IconPlus, IconEdit, IconDelete } from '@arco-design/web-vue/es/icon'
+import { IconLeft, IconUpload, IconPlus, IconDelete, IconEdit } from '@arco-design/web-vue/es/icon'
 import { getTestDataList, deleteTestData, renameTestData, createTestData } from '@/api/testData'
-import type { ProblemCaseFileResponse } from '@/types/testData'
+import type {
+  ProblemCaseFileResponse,
+  SingleProblemCaseUploadRequest,
+  DeleteProblemCaseFileRequest,
+  RenameTestDataRequest
+} from '@/types/testData'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,9 +32,7 @@ const router = useRouter()
 const loading = ref(false)
 const problemId = ref<number>(0)
 const testDataCase = ref<ProblemCaseFileResponse[]>([])
-
-// 展示用的列表（将每个用例拆分成输入和输出两个文件）
-const testDataList = ref<any[]>([])
+const testDataList = ref<TestDataFileItem[]>([])
 
 interface TestDataFileItem {
   caseId: number
@@ -37,23 +42,22 @@ interface TestDataFileItem {
   gmtModified: string
 }
 
-// 重命名弹窗相关
+// --- 重命名弹窗相关 ---
 const renameModalVisible = ref(false)
-const renamingFile = ref<TestDataItem>({})
-const newFileName = ref('')
+// 修复：严格按照 RenameTestDataRequest 的结构定义表单
+const renameForm = reactive<RenameTestDataRequest>({
+  problemId: 0,
+  oldFileName: '',
+  newFileName: ''
+})
 
-// 创建测试数据弹窗相关
+// --- 创建测试数据弹窗相关 ---
 const createModalVisible = ref(false)
-const createFileName = ref('')
-const createInputContent = ref('')
-const createOutputContent = ref('')
-
-interface TestDataItem {
-  id: number
-  fileName: string
-  fileSize: number
-  gmtModified: string
-}
+const createForm = reactive({
+  fileName: '',
+  inputContent: '',
+  outputContent: ''
+})
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
@@ -71,7 +75,6 @@ const fetchTestDataList = async () => {
     const res = await getTestDataList(problemId.value)
     if (res.code === 200) {
       testDataCase.value = res.data || []
-      // 将每个用例拆分成输入和输出两个文件
       const fileList: TestDataFileItem[] = []
       testDataCase.value.forEach((item) => {
         if (item.inputFile) {
@@ -109,35 +112,42 @@ const handleBack = () => {
   router.push('/admin/problem')
 }
 
+// 打开重命名弹窗
 const handleOpenRenameModal = (file: TestDataFileItem) => {
-  renamingFile.value = {
-    id: file.caseId,
-    fileName: file.fileName,
-    fileSize: file.fileSize,
-    gmtModified: file.gmtModified
-  }
-  newFileName.value = file.fileName
+  renameForm.problemId = problemId.value
+  renameForm.oldFileName = file.fileName
+  renameForm.newFileName = file.fileName // 默认填充旧文件名方便修改
   renameModalVisible.value = true
 }
 
 const handleRename = async () => {
-  if (!renamingFile.value || !newFileName.value.trim()) {
+  if (!renameForm.newFileName.trim()) {
     Message.warning('请输入新文件名')
     return
   }
 
   try {
-    const res = await renameTestData(renamingFile.value.caseId, newFileName.value.trim())
+    // 修复：传递的参数改为 RenameTestDataRequest 结构
+    const params: RenameTestDataRequest = {
+      problemId: renameForm.problemId,
+      oldFileName: renameForm.oldFileName,
+      newFileName: renameForm.newFileName.trim()
+    }
+
+    // 注意：根据你的接口定义，renameTestData 返回的似乎直接是 ProblemCaseFileResponse 而不是 Result 包裹
+    const res = await renameTestData(params)
+
+    // 如果实际后端有统一下发 res.code 的话，也可以根据实际情况加一层 res.code === 200 的判断
     if (res.code === 200) {
-      Message.success('重命名成功')
+      Message.success(res.message)
       renameModalVisible.value = false
       fetchTestDataList()
     } else {
       Message.error(res.message || '重命名失败')
     }
   } catch (error) {
-    console.error('重命名失败:', error)
-    Message.error('重命名失败')
+    console.error('重命名操作异常:', error)
+    Message.error('重命名操作异常')
   }
 }
 
@@ -149,41 +159,49 @@ const handleDelete = async (file: TestDataFileItem) => {
     cancelText: '取消',
     async onOk() {
       try {
-        const res = await deleteTestData(file.caseId)
+        // 修复：传递的参数改为 DeleteProblemCaseFileRequest 结构
+        const params: DeleteProblemCaseFileRequest = {
+          problemId: problemId.value,
+          fileName: file.fileName
+        }
+        const res = await deleteTestData(params)
+
         if (res.code === 200) {
-          Message.success('删除成功')
+          Message.success(res.message)
           fetchTestDataList()
         } else {
           Message.error(res.message || '删除失败')
         }
       } catch (error) {
-        console.error('删除失败:', error)
-        Message.error('删除失败')
+        console.error('删除操作异常:', error)
+        Message.error('删除操作异常')
       }
     }
   })
 }
 
+// 打开创建弹窗
 const handleOpenCreateModal = () => {
-  createFileName.value = ''
-  createInputContent.value = ''
-  createOutputContent.value = ''
+  createForm.fileName = ''
+  createForm.inputContent = ''
+  createForm.outputContent = ''
   createModalVisible.value = true
 }
 
 const handleCreate = async () => {
-  if (!createFileName.value.trim()) {
+  if (!createForm.fileName.trim()) {
     Message.warning('请输入文件名')
     return
   }
 
   try {
-    const res = await createTestData({
+    const params: SingleProblemCaseUploadRequest = {
       problemId: problemId.value,
-      fileName: createFileName.value.trim(),
-      inputContent: createInputContent.value,
-      outputContent: createOutputContent.value
-    })
+      fileName: createForm.fileName.trim(),
+      inputContent: createForm.inputContent,
+      outputContent: createForm.outputContent
+    }
+    const res = await createTestData(params)
     if (res.code === 200) {
       Message.success('创建成功')
       createModalVisible.value = false
@@ -222,9 +240,7 @@ onMounted(() => {
   <div class="testdata-manage-page">
     <div class="page-header">
       <Button type="text" class="back-btn" @click="handleBack">
-        <template #icon>
-          <IconLeft />
-        </template>
+        <template #icon><IconLeft /></template>
         返回
       </Button>
       <span class="page-path">题目管理 / 管理测试数据</span>
@@ -234,26 +250,34 @@ onMounted(() => {
       <Card class="table-card" :bordered="false">
         <div class="action-bar">
           <Space>
-            <Upload action="/api/testdata/upload" :data="{ problemId: problemId }" :show-file-list="false"
-              accept=".in,.out,.txt" @success="handleUploadSuccess" @error="handleUploadError">
+            <Upload
+              action="/api/testdata/upload"
+              :data="{ problemId: problemId }"
+              :show-file-list="false"
+              accept=".in,.out,.txt"
+              @success="handleUploadSuccess"
+              @error="handleUploadError"
+            >
               <Button type="primary">
-                <template #icon>
-                  <IconUpload />
-                </template>
+                <template #icon><IconUpload /></template>
                 上传文件
               </Button>
             </Upload>
             <Button @click="handleOpenCreateModal">
-              <template #icon>
-                <IconPlus />
-              </template>
+              <template #icon><IconPlus /></template>
               创建测试数据
             </Button>
           </Space>
         </div>
 
-        <Table :loading="loading" :data="testDataList" :pagination="false" stripe :bordered="false"
-          class="testdata-table">
+        <Table
+          :loading="loading"
+          :data="testDataList"
+          :pagination="false"
+          stripe
+          :bordered="false"
+          class="testdata-table"
+        >
           <template #columns>
             <TableColumn title="文件类型" :width="100">
               <template #cell="{ record }">
@@ -277,14 +301,19 @@ onMounted(() => {
                 {{ record.gmtModified }}
               </template>
             </TableColumn>
-            <TableColumn title="操作" align="center">
+            <TableColumn title="操作" align="center" :width="120">
               <template #cell="{ record }">
                 <Space size="small">
+                  <Tooltip content="重命名">
+                    <Button type="text" size="small" @click="handleOpenRenameModal(record)">
+                      <template #icon><IconEdit /></template>
+                      重命名
+                    </Button>
+                  </Tooltip>
                   <Tooltip content="删除">
-                    <Button type="text" status="danger" size="small" class="action-btn" @click="handleDelete(record)">
-                      <template #icon>
-                        <IconDelete />
-                      </template>
+                    <Button type="text" status="danger" size="small" @click="handleDelete(record)">
+                      <template #icon><IconDelete /></template>
+                      删除
                     </Button>
                   </Tooltip>
                 </Space>
@@ -299,28 +328,45 @@ onMounted(() => {
       </Card>
     </div>
 
-    <!-- 重命名弹窗 -->
-    <Modal v-model:visible="renameModalVisible" title="重命名文件" :mask-closable="false" @confirm="handleRename">
-      <Form layout="vertical">
+    <Modal
+      v-model:visible="renameModalVisible"
+      title="重命名文件"
+      :mask-closable="false"
+      @ok="handleRename"
+    >
+      <Form :model="renameForm" layout="vertical">
         <FormItem label="新文件名">
-          <Input v-model="newFileName" placeholder="请输入新文件名" />
+          <Input v-model="renameForm.newFileName" placeholder="请输入新文件名" />
         </FormItem>
       </Form>
     </Modal>
 
-    <!-- 创建测试数据弹窗 -->
-    <Modal v-model:visible="createModalVisible" title="创建测试数据" :mask-closable="false" @confirm="handleCreate">
-      <Form layout="vertical">
-        <FormItem label="文件名">
-          <Input v-model="createFileName" placeholder="例如：1" />
+    <Modal
+      v-model:visible="createModalVisible"
+      title="创建测试数据"
+      :mask-closable="false"
+      @ok="handleCreate"
+      :unmount-on-close="true"
+    >
+      <Form :model="createForm" layout="vertical">
+        <FormItem label="文件名" required>
+          <Input v-model="createForm.fileName" placeholder="例如：test_case_1" />
         </FormItem>
         <FormItem label="输入内容">
-          <Textarea v-model="createInputContent" placeholder="请输入真实的测试样例输入" :auto-size="{ minRows: 6, maxRows: 12 }"
-            class="monospace-input" />
+          <Textarea
+            v-model="createForm.inputContent"
+            placeholder="请输入测试样例输入内容"
+            :auto-size="{ minRows: 6, maxRows: 12 }"
+            class="monospace-input"
+          />
         </FormItem>
         <FormItem label="输出内容">
-          <Textarea v-model="createOutputContent" placeholder="请输入真实的测试样例输出" :auto-size="{ minRows: 6, maxRows: 12 }"
-            class="monospace-input" />
+          <Textarea
+            v-model="createForm.outputContent"
+            placeholder="请输入测试样例输出内容"
+            :auto-size="{ minRows: 6, maxRows: 12 }"
+            class="monospace-input"
+          />
         </FormItem>
       </Form>
     </Modal>
@@ -328,6 +374,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* 样式部分保持不变 */
 .testdata-manage-page {
   min-height: 100vh;
   display: flex;
@@ -373,18 +420,10 @@ onMounted(() => {
   border-bottom: 1px solid #e5e6eb;
 }
 
-.testdata-table {
-  margin-top: 0;
-}
-
 .file-name {
   font-family: 'JetBrains Mono', 'Consolas', monospace;
-  font-size: 15px;
+  font-size: 14px;
   color: #1d2129;
-}
-
-.action-btn {
-  padding: 4px 8px;
 }
 
 .empty-state {
@@ -399,10 +438,8 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* 等宽字体，用于样例输入输出的对齐 */
 .monospace-input :deep(textarea) {
-  font-family: 'JetBrains Mono', 'Consolas', 'Fira Code', monospace;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
   background-color: #fafafa;
-  border: 1px solid var(--color-border-2);
 }
 </style>

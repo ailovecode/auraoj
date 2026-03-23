@@ -39,3 +39,9 @@ export interface ProblemCaseDeleteResponse {
   pairedFileName: string | null;
   reminder: string | null;
 }
+
+export interface RenameTestDataRequest {
+  problemId: number
+  oldFileName: string
+  newFileName: string
+}
