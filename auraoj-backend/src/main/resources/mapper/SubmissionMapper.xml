@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhy.auraojbackend.mapper.SubmissionMapper">
+
+    <resultMap id="BaseResultMap" type="com.zhy.auraojbackend.model.entity.Submission">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="user_id" jdbcType="BIGINT"/>
+            <result property="problemId" column="problem_id" jdbcType="BIGINT"/>
+            <result property="contestId" column="contest_id" jdbcType="BIGINT"/>
+            <result property="code" column="code" jdbcType="VARCHAR"/>
+            <result property="language" column="language" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="OTHER"/>
+            <result property="aiAnalyse" column="ai_analyse" jdbcType="VARCHAR"/>
+            <result property="judgeSummary" column="judge_summary" jdbcType="OTHER"/>
+            <result property="firstErrorCase" column="first_error_case" jdbcType="OTHER"/>
+            <result property="compileLog" column="compile_log" jdbcType="VARCHAR"/>
+            <result property="pattern" column="pattern" jdbcType="SMALLINT"/>
+            <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+            <result property="gmtModified" column="gmt_modified" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,problem_id,
+        contest_id,code,language,
+        status,ai_analyse,judge_summary,
+        first_error_case,compile_log,pattern,
+        gmt_create,gmt_modified
+    </sql>
+</mapper>
