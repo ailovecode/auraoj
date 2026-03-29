@@ -6,8 +6,11 @@ import {
 } from '@arco-design/web-vue'
 import { IconRefresh, IconPlayArrow } from '@arco-design/web-vue/es/icon'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
-import { getProblemDetail } from '@/api/problem'
-import type { BaseProblemInfo, DifficultyLevel } from '@/types/problem'
+import { getProblemDetail, submit } from '@/api/problem'
+import type { BaseProblemInfo, SubmitRequest } from '@/types/problem'
+import { getDifficultyText, getDifficultyColor } from '@/utils/format'
+import { JUDGE_MODE } from '@/types/problem'
+import { useUserStore } from '@/store/user'
 
 // 引入 marked 和 KaTeX 插件
 import { marked } from 'marked'
@@ -22,10 +25,11 @@ marked.use(markedKatex({
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const problemData = ref<BaseProblemInfo | null>(null)
-const selectedLanguage = ref('java')
+const selectedLanguage = ref('cpp')
 const customInput = ref('')
 const runOutput = ref('')
 const activeTab = ref('testcases')
@@ -38,24 +42,24 @@ const languageOptions = [
 ]
 
 const languageMap: Record<string, string> = {
-  java: 'java',
   cpp: 'cpp',
+  java: 'java',
   python: 'python',
   javascript: 'javascript'
 }
 
 const defaultCode: Record<string, string> = {
-  java: `public class Solution {
-    public static void main(String[] args) {
-        // 请在此编写代码
-    }
-}`,
   cpp: `#include <iostream>
 using namespace std;
 
 int main() {
     // 请在此编写代码
     return 0;
+}`,
+  java: `public class Main {
+    public static void main(String[] args) {
+        // 请在此编写代码
+    }
 }`,
   python: `# 请在此编写代码
 def main():
@@ -69,25 +73,7 @@ function solution() {
 }`
 }
 
-const editorCode = ref(defaultCode.java)
-
-const getDifficultyText = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case 'easy': return '简单'
-    case 'medium': return '中等'
-    case 'hard': return '困难'
-    default: return '未知'
-  }
-}
-
-const getDifficultyColor = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case 'easy': return 'green'
-    case 'medium': return 'orange'
-    case 'hard': return 'red'
-    default: return 'gray'
-  }
-}
+const editorCode = ref(defaultCode.cpp)
 
 const fetchProblemDetail = async () => {
   const problemId = route.params.id as string
@@ -119,11 +105,11 @@ const fetchProblemDetail = async () => {
 
 const handleLanguageChange = (value: string) => {
   selectedLanguage.value = value
-  editorCode.value = defaultCode[value as keyof typeof defaultCode] || defaultCode.java
+  editorCode.value = defaultCode[value as keyof typeof defaultCode] || defaultCode.cpp
 }
 
 const handleResetCode = () => {
-  editorCode.value = defaultCode[selectedLanguage.value as keyof typeof defaultCode] || defaultCode.java
+  editorCode.value = defaultCode[selectedLanguage.value as keyof typeof defaultCode] || defaultCode.cpp
   Message.success('代码已重置')
 }
 
@@ -142,11 +128,41 @@ const handleRunCode = () => {
   Message.info('代码运行中（模拟）')
 }
 
-const handleSubmitCode = () => {
-  Message.loading('正在提交代码...')
-  setTimeout(() => {
-    Message.success('提交成功！正在判题中...')
-  }, 1000)
+const handleSubmitCode = async () => {
+  // 检查用户是否登录
+  if (!userStore.userInfo?.id) {
+    Message.warning('请先登录')
+    return
+  }
+
+  // 检查题目是否存在
+  if (!problemData.value?.id) {
+    Message.error('题目信息加载失败')
+    return
+  }
+
+  try {
+    Message.loading('正在提交代码...')
+
+    const submitData: SubmitRequest = {
+      userId: userStore.userInfo.id,
+      problemId: problemData.value.id,
+      code: editorCode.value || '',
+      language: selectedLanguage.value,
+      pattern: JUDGE_MODE.NORMAL
+    }
+
+    const res = await submit(submitData)
+
+    if (res.code === 200) {
+      Message.success('提交成功！正在判题中...')
+    } else {
+      Message.error(res.message || '提交失败')
+    }
+  } catch (error) {
+    console.error('提交失败:', error)
+    Message.error('提交失败，请稍后重试')
+  }
 }
 
 // const handleBack = () => {
@@ -172,9 +188,6 @@ const renderMarkdown = (text?: string) => {
 
             <div class="problem-content" v-if="problemData">
               <div class="panel-header">
-                <!-- <Button type="text" @click="handleBack" class="inner-back-btn" size="small">
-                  ← 返回题目列表
-                </Button> -->
 
                 <TypographyTitle :heading="3" class="problem-title">
                   {{ problemData.id }}. {{ problemData.title }}
@@ -184,8 +197,8 @@ const renderMarkdown = (text?: string) => {
                   <Tag :color="getDifficultyColor(problemData.difficulty)" class="lc-tag lc-difficulty-tag">
                     {{ getDifficultyText(problemData.difficulty) }}
                   </Tag>
-                  <Tag class="lc-tag">时间: {{ problemData.judgeConfig?.timeLimit }}ms</Tag>
-                  <Tag class="lc-tag">内存: {{ problemData.judgeConfig?.memoryLimit }}MB</Tag>
+                  <Tag class="lc-tag">时间: {{ problemData.timeLimit }}ms</Tag>
+                  <Tag class="lc-tag">内存: {{ problemData.memoryLimit }}MB</Tag>
                 </Space>
               </div>
               <div class="md-content" v-html="renderMarkdown(problemData.description)"></div>
@@ -297,8 +310,8 @@ const renderMarkdown = (text?: string) => {
 <style scoped>
 /* ==================== 1. 全局与布局基座 ==================== */
 .doing-question-page {
-  /* 完美贴合：屏幕总高度 减去 顶部导航栏的 60px */
   height: calc(100vh - 60px);
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: #f0f2f5;
@@ -410,7 +423,7 @@ const renderMarkdown = (text?: string) => {
 .panel-header {
   padding: 12px 16px;
   border-bottom: 1px solid #f2f3f5;
-  background: #fafafa;
+  background: #ffffff;
 }
 
 .lc-tag {

@@ -2,14 +2,12 @@ import request from '@/utils/request'
 import type {
   LoginParams,
   LoginResponse,
-  GetAllUsersRes,
-  DeleteUserRes,
-  BasicUserInfoRes,
-  UserLogoutRes,
+  UserListData,
+  UserInfo,
   UserRegisterParams,
-  UserRegisterRes,
   UpdateUserParams
 } from '@/types/user'
+import type { Result } from '@/types/common'
 
 // ---------------------【用户接口】--------------------
 
@@ -19,22 +17,22 @@ export function userLogin(params: LoginParams): Promise<LoginResponse> {
 }
 
 // 获取当前用户信息接口
-export function getUserInfo(): Promise<BasicUserInfoRes> {
+export function getUserInfo(): Promise<Result<UserInfo>> {
   return request.get('/user/current')
 }
 
 // 用户登出接口
-export function userLogout(): Promise<UserLogoutRes> {
+export function userLogout(): Promise<Result<boolean>> {
   return request.post('/user/logout')
 }
 
 // 用户注册接口
-export function userRegister(params: UserRegisterParams): Promise<UserRegisterRes> {
+export function userRegister(params: UserRegisterParams): Promise<Result<number>> {
   return request.post('/user/register', params)
 }
 
 // 上传用户头像接口
-export function uploadAvatar(userId: number, file: File): Promise<BasicUserInfoRes> {
+export function uploadAvatar(userId: number, file: File): Promise<Result<UserInfo>> {
   const formData = new FormData()
   formData.append('userId', userId.toString())
   formData.append('file', file)
@@ -47,7 +45,7 @@ export function uploadAvatar(userId: number, file: File): Promise<BasicUserInfoR
 }
 
 // 用户修改个人信息接口
-export function updateUserUserInfo(params: UpdateUserParams): Promise<BasicUserInfoRes> {
+export function updateUserUserInfo(params: UpdateUserParams): Promise<Result<UserInfo>> {
   return request.post('/user/update', params)
 }
 
@@ -57,16 +55,16 @@ export function updateUserUserInfo(params: UpdateUserParams): Promise<BasicUserI
 export function updateCurrentUser(
   userId: number,
   params: UpdateUserParams
-): Promise<BasicUserInfoRes> {
+): Promise<Result<UserInfo>> {
   return request.post(`/user/admin/${userId}/update`, params)
 }
 
 // 删除用户接口
-export function deleteUser(userId: number): Promise<DeleteUserRes> {
+export function deleteUser(userId: number): Promise<Result<boolean>> {
   return request.delete(`/user/admin/${userId}/deleteUser`)
 }
 
 // 获取所有用户接口
-export function getAllUsers(pageNum: number, pageSize: number): Promise<GetAllUsersRes> {
+export function getAllUsers(pageNum: number, pageSize: number): Promise<Result<UserListData>> {
   return request.get(`/user/admin/list?pageNum=${pageNum}&pageSize=${pageSize}`)
 }

@@ -24,9 +24,10 @@ import {
   IconRefresh,
   IconSettings,
 } from '@arco-design/web-vue/es/icon'
-import { queryAllProblems } from '@/api/problem'
+import { deleteProblem, queryAllProblems } from '@/api/problem'
 import type { AdminProblemInfo } from '@/types/problem'
 import { useRouter } from 'vue-router'
+import { getDifficultyText, getDifficultyColor as getDifficultyTagColor, getProblemStatusText as getStatusText, getProblemStatusColor as getStatusTagColor, formatDate } from '@/utils/format'
 
 const router = useRouter()
 const loading = ref(false)
@@ -38,15 +39,15 @@ const problemList = ref<AdminProblemInfo[]>([])
 // 搜索表单模型
 const searchForm = ref({
   title: '',
-  difficulty: '' as number | '',
+  difficulty: '' as string | '',
   status: '' as number | ''
 })
 
 const difficultyOptions = [
   { label: '全部', value: '' },
-  { label: '简单', value: 1 },
-  { label: '中等', value: 2 },
-  { label: '困难', value: 3 }
+  { label: '简单', value: 'easy' },
+  { label: '中等', value: 'medium' },
+  { label: '困难', value: 'hard' }
 ]
 
 const statusOptions = [
@@ -59,7 +60,7 @@ const statusOptions = [
 const filteredProblemList = computed(() => {
   return problemList.value.filter((problem) => {
     const matchTitle = !searchForm.value.title || problem.title.toLowerCase().includes(searchForm.value.title.toLowerCase())
-    const matchDifficulty = searchForm.value.difficulty === '' || problem.difficulty === Number(searchForm.value.difficulty)
+    const matchDifficulty = searchForm.value.difficulty === '' || problem.difficulty === searchForm.value.difficulty
     const matchStatus = searchForm.value.status === '' || Number(problem.status) === Number(searchForm.value.status)
     return matchTitle && matchDifficulty && matchStatus
   })
@@ -109,63 +110,26 @@ const handleAdd = () => {
 }
 
 const handleEdit = (problem: AdminProblemInfo) => {
-  Message.info(`编辑题目：${problem.title}`)
+  router.push(`/admin/problem/edit/${problem.id}`)
 }
 
 const handleDelete = async (problemId: number) => {
-  Message.info(`删除题目：${problemId}`)
+  try {
+    const res = await deleteProblem(problemId)
+    if (res.code === 200 && res.data) {
+      Message.success('题目删除成功')
+      fetchProblemList()
+    } else {
+      Message.error(res.message || '删除题目失败')
+    }
+  } catch (error) {
+    console.error('删除题目失败:', error)
+    Message.error('删除题目失败')
+  }
 }
 
 const handleManageTestData = (problem: AdminProblemInfo) => {
-  Message.info(`管理测试数据：${problem.title}`)
-}
-
-const getDifficultyText = (difficulty?: string) => {
-  switch (difficulty) {
-    case 'easy': return '简单'
-    case 'medium': return '中等'
-    case 'hard': return '困难'
-    default: return '未知'
-  }
-}
-
-const getDifficultyTagColor = (difficulty?: string) => {
-  switch (difficulty) {
-    case 'easy': return 'green'
-    case 'medium': return 'orange'
-    case 'hard': return 'red'
-    default: return 'gray'
-  }
-}
-
-const getStatusTagColor = (status?: number) => {
-  switch (status) {
-    case 1: return 'green'
-    case 2: return 'red'
-    case 3: return 'orange'
-    default: return 'gray'
-  }
-}
-
-const getStatusText = (status?: number) => {
-  switch (status) {
-    case 1: return '公开'
-    case 2: return '私有'
-    case 3: return '比赛中'
-    default: return '未知'
-  }
-}
-
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  router.push(`/admin/problem/${problem.id}/testdata`)
 }
 
 onMounted(() => {
@@ -261,7 +225,13 @@ onMounted(() => {
               {{ rowIndex + 1 }}
             </template>
           </TableColumn>
-          <TableColumn data-index="title" title="题目名称" :width="80" />
+          <TableColumn title="题目名称" :width="120">
+            <template #cell="{ record }">
+              <a class="problem-link" @click="router.push(`/problem/${record.id}`)">
+                {{ record.title }}
+              </a>
+            </template>
+          </TableColumn>
           <!-- <TableColumn title="题目信息" :width="250">
             <template #cell="{ record }">
               <div class="problem-info-cell">
@@ -424,5 +394,17 @@ onMounted(() => {
 .tags-cell .no-tags {
   color: #c9cdd4;
   font-size: 13px;
+}
+
+.problem-link {
+  color: #165dff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.problem-link:hover {
+  color: #0e42d2;
+  text-decoration: underline;
 }
 </style>

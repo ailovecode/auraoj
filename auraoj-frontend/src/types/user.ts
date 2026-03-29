@@ -28,20 +28,6 @@ export interface LoginResponse {
   message: string
 }
 
-// 基本用户信息返回参数
-export interface BasicUserInfoRes {
-  code: number
-  data: UserInfo
-  message: string
-}
-
-// 用户登出返回参数
-export interface UserLogoutRes {
-  code: number
-  data: boolean
-  message: string
-}
-
 // 注册接口参数
 export interface UserRegisterParams {
   username?: string
@@ -51,11 +37,6 @@ export interface UserRegisterParams {
   email?: string
   gender?: number
   school?: string
-}
-export interface UserRegisterRes {
-  code: number
-  data: number
-  message: string
 }
 
 // 获取所有用户返回参数
@@ -68,12 +49,6 @@ export interface UserListData {
   hasPrevious: boolean
   hasNext: boolean
 }
-export interface GetAllUsersRes {
-  code: number
-  data: UserListData
-  message: string
-}
-
 // 更新用户信息参数
 export interface UpdateUserParams {
   username?: string
@@ -87,9 +62,3 @@ export interface UpdateUserParams {
   signature?: string
 }
 
-// 删除用户返回参数
-export interface DeleteUserRes {
-  code: number
-  data: boolean
-  message: string
-}

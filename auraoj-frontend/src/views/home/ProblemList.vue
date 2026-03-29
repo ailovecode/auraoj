@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import {
   Card,
   Input,
@@ -12,11 +12,13 @@ import {
   Message
 } from '@arco-design/web-vue'
 import { searchProblem } from '@/api/problem'
-import type { AdminProblemInfo, DifficultyLevel, ProblemSearchRequest } from '@/types/problem'
+import type { AdminProblemInfo, ProblemSearchRequest } from '@/types/problem'
 import { listAllTags } from '@/api/tag'
 import type { TagInfo } from '@/types/tagInfo'
+import { getDifficultyText, getDifficultyColor } from '@/utils/format'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(20)
@@ -24,6 +26,7 @@ const total = ref(0)
 const problemList = ref<AdminProblemInfo[]>([])
 const tagOptions = ref<TagInfo[]>([])
 const difficultyFilter = ref('')
+const currentTagName = ref('')
 
 const searchForm = ref<ProblemSearchRequest>({
   title: '',
@@ -31,45 +34,12 @@ const searchForm = ref<ProblemSearchRequest>({
   tagId: undefined
 })
 
-const difficultyOptions = [
-  { label: '全部难度', value: '' },
-  { label: '简单', value: "easy" },
-  { label: '中等', value: "medium" },
-  { label: '困难', value: "hard" }
-]
-
 const filterOptions = [
   { text: '全部难度', value: '' },
   { text: '简单', value: 'easy' },
   { text: '中等', value: 'medium' },
   { text: '困难', value: 'hard' }
 ]
-
-const getDifficultyText = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case "easy":
-      return '简单'
-    case "medium":
-      return '中等'
-    case "hard":
-      return '困难'
-    default:
-      return '未知'
-  }
-}
-
-const getDifficultyColor = (difficulty?: DifficultyLevel): string => {
-  switch (difficulty) {
-    case "easy":
-      return 'green'
-    case "medium":
-      return 'orange'
-    case "hard":
-      return 'red'
-    default:
-      return 'gray'
-  }
-}
 
 const fetchProblemList = async () => {
   loading.value = true
@@ -145,8 +115,37 @@ const filteredProblemList = computed(() => {
 })
 
 onMounted(() => {
-  fetchProblemList()
+  // 检查 URL 是否有 tagId 参数
+  const tagIdParam = route.query.tagId
+  if (tagIdParam) {
+    const tagId = Number(tagIdParam)
+    if (!isNaN(tagId)) {
+      searchForm.value.tagId = tagId
+    }
+  }
+
   fetchTags()
+  fetchProblemList()
+})
+
+// 监听 tagOptions 变化，更新标签名称
+watch(tagOptions, (newTags) => {
+  if (searchForm.value.tagId && newTags.length > 0) {
+    const tag = newTags.find(t => t.id === searchForm.value.tagId)
+    if (tag) {
+      currentTagName.value = tag.name
+    }
+  }
+})
+
+// 监听 tagId 变化，更新 URL
+watch(() => searchForm.value.tagId, (newTagId) => {
+  if (newTagId) {
+    router.replace({ query: { ...route.query, tagId: newTagId.toString() } })
+  } else {
+    const { tagId, ...restQuery } = route.query
+    router.replace({ query: restQuery })
+  }
 })
 </script>
 

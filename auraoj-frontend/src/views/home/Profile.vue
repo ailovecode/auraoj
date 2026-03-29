@@ -4,46 +4,11 @@ import { useUserStore } from '@/store/user'
 import { Card, Avatar, Tag, Row, Col, Divider, Message, Modal, Button } from '@arco-design/web-vue'
 import { IconCamera, IconUser, IconEmail, IconPhone, IconLocation, IconInfo, IconUpload } from '@arco-design/web-vue/es/icon'
 import { uploadAvatar, getUserInfo } from '@/api/user'
+import { formatDate, getGenderText, getRoleText, getRoleTagColor } from '@/utils/format'
 
 const userStore = useUserStore()
 
 const userInfo = computed(() => userStore.userInfo)
-
-const getGenderText = (gender?: number) => {
-  switch (gender) {
-    case 0: return '女'
-    case 1: return '男'
-    default: return '未知'
-  }
-}
-
-const getRoleText = (role?: string) => {
-  switch (role) {
-    case 'admin': return '管理员'
-    case 'teacher': return '老师'
-    default: return '学生'
-  }
-}
-
-const getRoleTagColor = (role?: string) => {
-  switch (role) {
-    case 'admin': return 'red'
-    case 'teacher': return 'orange'
-    default: return 'arcoblue'
-  }
-}
-
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
 
 // 头像上传相关
 const avatarModalVisible = ref(false)

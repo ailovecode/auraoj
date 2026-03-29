@@ -11,7 +11,8 @@ export interface BaseProblemInfo {
   inputDesc: string
   outputDesc: string
   dataScope: string
-  judgeConfig: string
+  timeLimit: number
+  memoryLimit: number
   difficulty: DifficultyLevel
   submitNum: number
   acceptNum: number
@@ -42,13 +43,6 @@ export interface ProblemListData {
   hasNext: boolean
 }
 
-// 查询结果
-export interface QueryAllProblemRes {
-  code: number
-  data: ProblemListData
-  message: string
-}
-
 // 问题添加请求
 export interface ProblemAddRequest {
   title: string;
@@ -64,11 +58,21 @@ export interface ProblemAddRequest {
   tagIds?: number[];
 }
 
-// 问题添加结果
-export interface ProblemAddRes {
-  code: number
-  data: number
-  message: string
+// 问题更新请求（所有字段可选，但必须有题目ID）
+export interface UpdateProblemRequest {
+  id: number
+  title?: string
+  timeLimit?: number
+  memoryLimit?: number
+  description?: string
+  inputDesc?: string
+  outputDesc?: string
+  dataScope?: string
+  sampleInput?: string
+  sampleOutput?: string
+  difficulty?: DifficultyLevel
+  tagIds?: number[]
+  status?: number
 }
 
 export interface ProblemSearchRequest {
@@ -77,8 +81,55 @@ export interface ProblemSearchRequest {
   tagId?: number
 }
 
-export interface GetProblemRes {
-  code: number
-  data: BaseProblemInfo
-  message: string
+
+
+// 提交
+
+// 判题模式枚举
+export const JUDGE_MODE = {
+  NORMAL: 1,    // 普通判题模式
+  CONTEST: 2    // 比赛判题模式
+} as const
+
+export type JudgeMode = typeof JUDGE_MODE[keyof typeof JUDGE_MODE]
+
+export const SubmissionStatusEnum = {
+  PENDING: { status: 'Pending', description: '待评判' },
+  ACCEPTED: { status: 'Accepted', description: '通过' },
+  WRONG_ANSWER: { status: 'Wrong Answer', description: '答案错误' },
+  COMPILE_ERROR: { status: 'Compile Error', description: '编译错误' },
+  MEMORY_LIMIT_EXCEEDED: { status: 'Memory Limit Exceeded', description: '内存超限' },
+  TIME_LIMIT_EXCEEDED: { status: 'Time Limit Exceeded', description: '超时' },
+  PRESENTATION_ERROR: { status: 'Presentation Error', description: '格式错误' },
+  OUTPUT_LIMIT_EXCEEDED: { status: 'Output Limit Exceeded', description: '输出超限' },
+  DANGEROUS_OPERATION: { status: 'Dangerous Operation', description: '危险操作' },
+  RUNTIME_ERROR: { status: 'Runtime Error', description: '运行时错误' },
+  SYSTEM_ERROR: { status: 'System Error', description: '系统错误' },
+} as const;
+
+export type StatusKey = keyof typeof SubmissionStatusEnum;
+
+export interface SubmitResponse {
+  id: number;
+  userId: number;
+  problemId: number;
+  contestId?: number;
+  language: string;
+  status: string;
+  pattern: JudgeMode;
+  gmtCreate: Date;
+}
+
+export interface SubmitRequest {
+  userId: number;
+  problemId: number;
+  contestId?: number;
+  code: string;
+  language: string;
+  status?: string;
+  aiAnalyse?: string;
+  judgeSummary?: string;
+  firstErrorCase?: string;
+  compileLog?: string;
+  pattern: JudgeMode;
 }

@@ -30,9 +30,12 @@ const router = createRouter({
         {
           path: 'submission',
           name: 'submission',
-          component: {
-            template: '<div class="placeholder-page"><h1>提交记录</h1></div>'
-          }
+          component: () => import('@/views/home/SubmissionList.vue')
+        },
+        {
+          path: 'tags',
+          name: 'tags',
+          component: () => import('@/views/home/TagsPage.vue')
         },
         {
           path: 'rank',
@@ -79,6 +82,16 @@ const router = createRouter({
           path: 'problem/add',
           name: 'adminAddProblem',
           component: () => import('@/views/admin/AddProblem.vue')
+        },
+        {
+          path: 'problem/edit/:id',
+          name: 'adminEditProblem',
+          component: () => import('@/views/admin/AddProblem.vue')
+        },
+        {
+          path: 'problem/:problemId/testdata',
+          name: 'adminTestData',
+          component: () => import('@/views/admin/TestDataManage.vue')
         },
         {
           path: 'submission',

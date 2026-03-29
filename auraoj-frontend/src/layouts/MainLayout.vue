@@ -16,18 +16,25 @@ const route = useRoute()
 
 <style scoped>
 .main-layout {
-  min-height: 100vh;
+  height: 100%;
+  /* 使用百分比让布局高度填满 */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  /* 防止外部滚动 */
 }
 
 .main-content {
   flex: 1;
   padding: 24px;
+  overflow-y: auto;
+  /* 允许内容滚动 */
 }
 
-/* 沉浸式页面专用，去除所有外层边距 */
 .no-padding {
   padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 </style>
