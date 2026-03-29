@@ -4,6 +4,9 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.common.Result;
 import com.zhy.auraojbackend.exception.BusinessException;
+import com.zhy.auraojbackend.model.dto.PageResponse;
+import com.zhy.auraojbackend.model.dto.submission.ShowSubmissionInfo;
+import com.zhy.auraojbackend.model.dto.submission.request.ShowSubmissionRequest;
 import com.zhy.auraojbackend.model.dto.submission.request.SubmitRequest;
 import com.zhy.auraojbackend.model.dto.submission.response.SubmitResponse;
 import com.zhy.auraojbackend.service.SubmissionService;
@@ -49,6 +52,28 @@ public class SubmissionController {
             return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("提交代码系统错误", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @PostMapping("/get")
+    @Operation(summary = "查询提交信息", description = "根据筛选条件分页查询提交列表，仅校验登录权限")
+    @SaCheckLogin
+    public Result<PageResponse<ShowSubmissionInfo>> getSubmissionInfo(
+            @Parameter(description = "提交查询条件") @RequestBody ShowSubmissionRequest showSubmissionRequest,
+            HttpServletRequest request) {
+        try {
+            PageResponse<ShowSubmissionInfo> submissionInfoPage =
+                    submissionService.getSubmissionInfo(showSubmissionRequest);
+            return Result.success(submissionInfoPage);
+        } catch (BusinessException e) {
+            log.error("查询提交信息业务错误", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("查询提交信息参数错误", e);
+            return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("查询提交信息系统错误", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

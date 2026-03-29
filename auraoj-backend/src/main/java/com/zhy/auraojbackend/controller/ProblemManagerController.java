@@ -23,6 +23,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * @version 1.0
  * @Author zhy
@@ -160,6 +162,27 @@ public class ProblemManagerController {
             return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("删除题目异常 - 系统异常", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @GetMapping("/getListProblemsByTagId/{tagId}")
+    @Operation(summary = "根据标签 ID 查询所有关联题目", description = "查询指定标签下的所有题目列表")
+    public Result<List<QueryAllProblemResponse>> listProblemsByTagId(
+            @Parameter(description = "标签 ID", required = true)
+            @PathVariable Long tagId,
+            HttpServletRequest request) {
+        try {
+            List<QueryAllProblemResponse> problems = problemService.listProblemsByTagId(tagId);
+            return Result.success(problems);
+        } catch (BusinessException e) {
+            log.error("根据标签 ID 查询题目异常 - 业务异常", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("根据标签 ID 查询题目异常 - 参数校验失败", e);
+            return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("根据标签 ID 查询题目异常 - 系统异常", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

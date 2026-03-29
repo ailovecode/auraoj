@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author zhy
@@ -380,5 +381,44 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         LambdaQueryWrapper<TagInfo> tagQueryWrapper = new LambdaQueryWrapper<>();
         tagQueryWrapper.in(TagInfo::getId, tagIds);
         return tagService.list(tagQueryWrapper);
+    }
+
+    @Override
+    public List<QueryAllProblemResponse> listProblemsByTagId(Long tagId) {
+        log.info("根据标签 ID 查询所有关联题目，tagId: {}", tagId);
+
+        ThrowUtils.throwIf(tagId == null, ErrorCode.BAD_PARAMS, "标签 ID 不能为空");
+
+        // 1. 检查标签是否存在
+        TagInfo tag = tagService.getById(tagId);
+        ThrowUtils.throwIf(tag == null, ErrorCode.RESOURCE_NO_TAG, "标签不存在");
+
+        // 2. 通过 ProblemTagMap 查询所有关联的 problemId
+        LambdaQueryWrapper<ProblemTagMap> mapQueryWrapper = new LambdaQueryWrapper<>();
+        mapQueryWrapper.eq(ProblemTagMap::getTagId, tagId);
+        List<ProblemTagMap> problemTagMaps = problemTagMapService.list(mapQueryWrapper);
+
+        if (CollectionUtils.isEmpty(problemTagMaps)) {
+            log.info("该标签下没有关联题目，tagId: {}", tagId);
+            return Collections.emptyList();
+        }
+
+        // 3. 提取所有的 problemId
+        List<Long> problemIds = problemTagMaps.stream()
+                .map(ProblemTagMap::getProblemId)
+                .collect(Collectors.toList());
+
+        // 4. 根据 problemId 查询题目信息
+        LambdaQueryWrapper<Problem> problemQueryWrapper = new LambdaQueryWrapper<>();
+        problemQueryWrapper.in(Problem::getId, problemIds);
+        List<Problem> problems = this.list(problemQueryWrapper);
+
+        // 5. 转换为 QueryAllProblemResponse 对象
+        List<QueryAllProblemResponse> responseList = problems.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        log.info("根据标签 ID 查询题目成功，tagId: {}, 题目数量：{}", tagId, responseList.size());
+        return responseList;
     }
 }

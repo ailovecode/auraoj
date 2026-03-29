@@ -1,23 +1,27 @@
 package com.zhy.auraojbackend.model.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.zhy.auraojbackend.model.enums.SubmissionStatusEnum;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.Date;
 
 /**
  * 用户代码提交记录表
+ * @author zhy
  * @TableName submission
  */
 @TableName(value ="submission")
 @Data
+@Accessors(chain = true)
 public class Submission {
     /**
      * 提交记录主键
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -69,6 +73,11 @@ public class Submission {
      * 编译器输出日志
      */
     private String compileLog;
+
+    /**
+     * 提交错误信息
+     */
+    private String errorMessage;
 
     /**
      * 提交模式：1练习 / 2比赛

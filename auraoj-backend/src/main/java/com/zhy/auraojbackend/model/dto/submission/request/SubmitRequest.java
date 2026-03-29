@@ -88,8 +88,8 @@ public class SubmitRequest implements AbstractCheckRequest {
         }
 
         // 校验代码长度（防止过长代码）
-        if (code.length() > 100000) {
-            throw new BusinessException(ErrorCode.BAD_PARAMS, "代码长度不能超过 100000 字符");
+        if (code.length() > 1000000) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, "代码长度不能超过 1000000 字符");
         }
 
         // 校验语言长度

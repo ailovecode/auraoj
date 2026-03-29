@@ -10,6 +10,8 @@ import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
 
+import java.util.List;
+
 /**
 * @author zhy
 * @description 针对表【problem(题目信息表)】的数据库操作 Service
@@ -55,4 +57,11 @@ public interface ProblemService extends IService<Problem> {
     BaseProblemInfo getProblemById(Long problemId);
 
     boolean deleteProblem(Long problemId);
+
+    /**
+     * 根据标签 ID 查询所有关联题目
+     * @param tagId 标签 ID
+     * @return 题目列表
+     */
+    List<QueryAllProblemResponse> listProblemsByTagId(Long tagId);
 }

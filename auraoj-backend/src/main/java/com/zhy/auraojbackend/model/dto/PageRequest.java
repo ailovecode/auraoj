@@ -30,4 +30,9 @@ public class PageRequest {
      * 排序方式：asc 或 desc
      */
     private String sortOrder = "desc";
+
+    /**
+     * 标签 ID
+     */
+    private Long tagId;
 }

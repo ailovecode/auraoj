@@ -1,5 +1,7 @@
 package com.zhy.auraojbackend.model.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
@@ -21,8 +23,12 @@ public enum SubmissionStatusEnum {
     OUTPUT_LIMIT_EXCEEDED("Output Limit Exceeded", "输出超限"),
     DANGEROUS_OPERATION("Dangerous Operation", "危险操作"),
     RUNTIME_ERROR("Runtime Error", "运行时错误"),
-    SYSTEM_ERROR("System Error", "系统错误");
+    SYSTEM_ERROR("System Error", "系统错误"),
+    CANCELLED("Cancelled", "取消"),
+    SUBMITTED_FAILED("Submitted Failed", "提交失败");
 
+    @EnumValue
+    @JsonValue
     private final String status;
     private final String description;
 
