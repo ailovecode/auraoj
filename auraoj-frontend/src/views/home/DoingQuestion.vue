@@ -9,6 +9,7 @@ import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { getProblemDetail, submit } from '@/api/problem'
 import type { BaseProblemInfo, SubmitRequest } from '@/types/problem'
 import { getDifficultyText, getDifficultyColor } from '@/utils/format'
+import { JUDGE_MODE } from '@/types/problem'
 import { useUserStore } from '@/store/user'
 
 // 引入 marked 和 KaTeX 插件
@@ -148,7 +149,7 @@ const handleSubmitCode = async () => {
       problemId: problemData.value.id,
       code: editorCode.value || '',
       language: selectedLanguage.value,
-      pattern: 1  // 普通判题模式
+      pattern: JUDGE_MODE.NORMAL
     }
 
     const res = await submit(submitData)

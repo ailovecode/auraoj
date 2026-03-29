@@ -95,3 +95,25 @@ export const getLanguageText = (language: string): string => {
   }
   return langMap[language] || language
 }
+
+export const SUBMISSION_STATUS = {
+  'Pending': { color: 'gray', description: 'Pending' },
+  'Accepted': { color: 'green', description: 'Accepted' },
+  'Wrong Answer': { color: 'red', description: 'Wrong Answer' },
+  'Compile Error': { color: 'orange', description: 'Compile Error' },
+  'Runtime Error': { color: 'gold', description: 'Runtime Error' },
+  'Time Limit Exceeded': { color: 'cyan', description: 'Time Limit Exceeded' },
+  'Memory Limit Exceeded': { color: 'purple', description: 'Memory Limit Exceeded' },
+  'Presentation Error': { color: 'pink', description: 'Presentation Error' },
+  'Output Limit Exceeded': { color: 'magenta', description: 'Output Limit Exceeded' },
+  'Dangerous Operation': { color: 'brown', description: 'Dangerous Operation' },
+  'System Error': { color: 'default', description: 'System Error' },
+  'Submitted Failed': { color: 'red', description: 'Submitted Failed' },
+  'Canceled': { color: 'gray', description: 'Canceled' }
+} as const
+
+export type SubmissionStatusKey = keyof typeof SUBMISSION_STATUS
+
+export const getSubmissionStatusInfo = (status: string): { color: string; description: string } => {
+  return SUBMISSION_STATUS[status as SubmissionStatusKey] || { color: 'gray', description: 'Unknown' }
+}

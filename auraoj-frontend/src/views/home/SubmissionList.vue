@@ -18,7 +18,7 @@ import {
 import { IconRefresh, IconSearch } from '@arco-design/web-vue/es/icon'
 import { getSubmissionInfo } from '@/api/judge'
 import type { ShowSubmissionRequest, ShowSubmissionInfo } from '@/types/judge'
-import { formatDate, getLanguageText } from '@/utils/format'
+import { formatDate, getLanguageText, getSubmissionStatusInfo, type SubmissionStatusKey } from '@/utils/format'
 
 const router = useRouter()
 
@@ -60,25 +60,6 @@ const statusOptions = [
   { label: 'Canceled', value: 'Canceled' }
 ]
 
-const getStatusInfo = (status: string) => {
-  const statusMap: Record<string, { color: string; description: string }> = {
-    'Pending': { color: 'gray', description: 'Pending' },
-    'Accepted': { color: 'green', description: 'Accepted' },
-    'Wrong Answer': { color: 'red', description: 'Wrong Answer' },
-    'Compile Error': { color: 'orange', description: 'Compile Error' },
-    'Runtime Error': { color: 'gold', description: 'Runtime Error' },
-    'Time Limit Exceeded': { color: 'cyan', description: 'Time Limit Exceeded' },
-    'Memory Limit Exceeded': { color: 'purple', description: 'Memory Limit Exceeded' },
-    'Presentation Error': { color: 'pink', description: 'Presentation Error' },
-    'Output Limit Exceeded': { color: 'magenta', description: 'Output Limit Exceeded' },
-    'Dangerous Operation': { color: 'brown', description: 'Dangerous Operation' },
-    'System Error': { color: 'default', description: 'System Error' },
-    'Submitted Failed': { color: 'red', description: 'Submitted Failed' },
-    'Canceled': { color: 'gray', description: 'Canceled' }
-  }
-  return statusMap[status] || { color: 'gray', description: 'Unknown' }
-}
-
 const fetchSubmissionList = async () => {
   loading.value = true
   try {
@@ -99,7 +80,7 @@ const fetchSubmissionList = async () => {
       params.language = searchForm.value.language
     }
     if (searchForm.value.status) {
-      params.status = searchForm.value.status
+      params.status = searchForm.value.status as SubmissionStatusKey
     }
 
     const res = await getSubmissionInfo(params)
@@ -206,8 +187,8 @@ onMounted(() => {
           </TableColumn>
           <TableColumn title="状态" :width="180">
             <template #cell="{ record }">
-              <Tag :color="getStatusInfo(record.status).color">
-                {{ getStatusInfo(record.status).description }}
+              <Tag :color="getSubmissionStatusInfo(record.status).color">
+                {{ getSubmissionStatusInfo(record.status).description }}
               </Tag>
             </template>
           </TableColumn>

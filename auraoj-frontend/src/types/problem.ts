@@ -85,6 +85,14 @@ export interface ProblemSearchRequest {
 
 // 提交
 
+// 判题模式枚举
+export const JUDGE_MODE = {
+  NORMAL: 1,    // 普通判题模式
+  CONTEST: 2    // 比赛判题模式
+} as const
+
+export type JudgeMode = typeof JUDGE_MODE[keyof typeof JUDGE_MODE]
+
 export const SubmissionStatusEnum = {
   PENDING: { status: 'Pending', description: '待评判' },
   ACCEPTED: { status: 'Accepted', description: '通过' },
@@ -107,8 +115,8 @@ export interface SubmitResponse {
   problemId: number;
   contestId?: number;
   language: string;
-  status: StatusKey;
-  pattern: number;
+  status: string;
+  pattern: JudgeMode;
   gmtCreate: Date;
 }
 
@@ -118,10 +126,10 @@ export interface SubmitRequest {
   contestId?: number;
   code: string;
   language: string;
-  status?: StatusKey;
+  status?: string;
   aiAnalyse?: string;
   judgeSummary?: string;
   firstErrorCase?: string;
   compileLog?: string;
-  pattern: number;
+  pattern: JudgeMode;
 }
