@@ -61,3 +61,37 @@ export const getUserStatusText = (status?: number): string => {
 export const getUserStatusColor = (status?: number): string => {
   return status === 1 ? 'red' : 'green'
 }
+
+export const getGenderText = (gender?: number): string => {
+  switch (gender) {
+    case 0: return '女'
+    case 1: return '男'
+    default: return '未知'
+  }
+}
+
+export const getRoleText = (role?: string): string => {
+  switch (role) {
+    case 'admin': return '管理员'
+    case 'teacher': return '老师'
+    default: return '学生'
+  }
+}
+
+export const getRoleTagColor = (role?: string): string => {
+  switch (role) {
+    case 'admin': return 'red'
+    case 'teacher': return 'orange'
+    default: return 'arcoblue'
+  }
+}
+
+export const getLanguageText = (language: string): string => {
+  const langMap: Record<string, string> = {
+    java: 'Java',
+    cpp: 'C++',
+    python: 'Python',
+    javascript: 'JavaScript'
+  }
+  return langMap[language] || language
+}

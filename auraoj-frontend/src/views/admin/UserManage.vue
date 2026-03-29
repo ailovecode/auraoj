@@ -33,7 +33,7 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { getAllUsers, updateCurrentUser, deleteUser } from '@/api/user'
 import type { UserInfo, UpdateUserParams } from '@/types/user'
-import { getUserStatusColor as getStatusTagColor, getUserStatusText as getStatusText, formatDate as formatDateTime } from '@/utils/format'
+import { getUserStatusColor as getStatusTagColor, getUserStatusText as getStatusText, formatDate as formatDateTime, getGenderText, getRoleText, getRoleTagColor } from '@/utils/format'
 
 const loading = ref(false)
 const pageNum = ref(1)
@@ -196,30 +196,6 @@ const handleDelete = async (userId: number) => {
     }
   } catch (error) {
     Message.error('删除失败')
-  }
-}
-
-const getGenderText = (gender?: number) => {
-  switch (gender) {
-    case 0: return '女'
-    case 1: return '男'
-    default: return '未知'
-  }
-}
-
-const getRoleTagColor = (role?: string) => {
-  switch (role) {
-    case 'admin': return 'red'
-    case 'teacher': return 'orange'
-    default: return 'arcoblue'
-  }
-}
-
-const getRoleText = (role?: string) => {
-  switch (role) {
-    case 'admin': return '管理员'
-    case 'teacher': return '老师'
-    default: return '学生'
   }
 }
 

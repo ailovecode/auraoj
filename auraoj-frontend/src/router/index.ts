@@ -30,9 +30,12 @@ const router = createRouter({
         {
           path: 'submission',
           name: 'submission',
-          component: {
-            template: '<div class="placeholder-page"><h1>提交记录</h1></div>'
-          }
+          component: () => import('@/views/home/SubmissionList.vue')
+        },
+        {
+          path: 'tags',
+          name: 'tags',
+          component: () => import('@/views/home/TagsPage.vue')
         },
         {
           path: 'rank',

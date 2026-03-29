@@ -81,7 +81,8 @@ const handleSelect = async (value: any) => {
           <MenuItem key="/">主页</MenuItem>
           <MenuItem key="/problem">题目</MenuItem>
           <MenuItem key="/contest">训练赛</MenuItem>
-          <MenuItem key="/status">评测状态</MenuItem>
+          <MenuItem key="/submission">提交记录</MenuItem>
+          <MenuItem key="/tags">标签</MenuItem>
           <MenuItem key="/rank">排名</MenuItem>
         </Menu>
       </div>

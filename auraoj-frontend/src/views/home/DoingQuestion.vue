@@ -6,9 +6,10 @@ import {
 } from '@arco-design/web-vue'
 import { IconRefresh, IconPlayArrow } from '@arco-design/web-vue/es/icon'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
-import { getProblemDetail } from '@/api/problem'
-import type { BaseProblemInfo } from '@/types/problem'
+import { getProblemDetail, submit } from '@/api/problem'
+import type { BaseProblemInfo, SubmitRequest } from '@/types/problem'
 import { getDifficultyText, getDifficultyColor } from '@/utils/format'
+import { useUserStore } from '@/store/user'
 
 // 引入 marked 和 KaTeX 插件
 import { marked } from 'marked'
@@ -23,10 +24,11 @@ marked.use(markedKatex({
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const problemData = ref<BaseProblemInfo | null>(null)
-const selectedLanguage = ref('java')
+const selectedLanguage = ref('cpp')
 const customInput = ref('')
 const runOutput = ref('')
 const activeTab = ref('testcases')
@@ -39,8 +41,8 @@ const languageOptions = [
 ]
 
 const languageMap: Record<string, string> = {
-  java: 'java',
   cpp: 'cpp',
+  java: 'java',
   python: 'python',
   javascript: 'javascript'
 }
@@ -70,7 +72,7 @@ function solution() {
 }`
 }
 
-const editorCode = ref(defaultCode.java)
+const editorCode = ref(defaultCode.cpp)
 
 const fetchProblemDetail = async () => {
   const problemId = route.params.id as string
@@ -125,11 +127,41 @@ const handleRunCode = () => {
   Message.info('代码运行中（模拟）')
 }
 
-const handleSubmitCode = () => {
-  Message.loading('正在提交代码...')
-  setTimeout(() => {
-    Message.success('提交成功！正在判题中...')
-  }, 1000)
+const handleSubmitCode = async () => {
+  // 检查用户是否登录
+  if (!userStore.userInfo?.id) {
+    Message.warning('请先登录')
+    return
+  }
+
+  // 检查题目是否存在
+  if (!problemData.value?.id) {
+    Message.error('题目信息加载失败')
+    return
+  }
+
+  try {
+    Message.loading('正在提交代码...')
+
+    const submitData: SubmitRequest = {
+      userId: userStore.userInfo.id,
+      problemId: problemData.value.id,
+      code: editorCode.value || '',
+      language: selectedLanguage.value,
+      pattern: 1  // 普通判题模式
+    }
+
+    const res = await submit(submitData)
+
+    if (res.code === 200) {
+      Message.success('提交成功！正在判题中...')
+    } else {
+      Message.error(res.message || '提交失败')
+    }
+  } catch (error) {
+    console.error('提交失败:', error)
+    Message.error('提交失败，请稍后重试')
+  }
 }
 
 // const handleBack = () => {
