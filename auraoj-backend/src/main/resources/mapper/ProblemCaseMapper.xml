@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhy.auraojbackend.mapper.ProblemCaseMapper">
+
+    <resultMap id="BaseResultMap" type="com.zhy.auraojbackend.model.entity.ProblemCase">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="problemId" column="problem_id" jdbcType="BIGINT"/>
+            <result property="inputFile" column="input_file" jdbcType="VARCHAR"/>
+            <result property="outputFile" column="output_file" jdbcType="VARCHAR"/>
+            <result property="inputFileSize" column="input_file_size" jdbcType="BIGINT"/>
+            <result property="outputFileSize" column="output_file_size" jdbcType="BIGINT"/>
+            <result property="status" column="status" jdbcType="SMALLINT"/>
+            <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+            <result property="gmtModified" column="gmt_modified" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,problem_id,input_file,
+        output_file,input_file_size,output_file_size,status,gmt_create,
+        gmt_modified
+    </sql>
+</mapper>

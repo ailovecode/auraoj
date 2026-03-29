@@ -47,11 +47,12 @@ public class BaseProblemInfo {
     /**
      * 时间限制 (单位：ms)
      */
-    private String timeLimit;
+    private int timeLimit;
 
     /**
      * 内存限制 (单位：MB)
      */
+    private int memoryLimit;
 
     /**
      * 难度等级：easy/medium/hard

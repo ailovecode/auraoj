@@ -10,17 +10,14 @@ import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.user.request.UserLoginRequest;
-import com.zhy.auraojbackend.model.dto.user.response.UserLoginResponse;
 import com.zhy.auraojbackend.model.dto.user.request.UserRegisterRequest;
 import com.zhy.auraojbackend.model.dto.user.request.UserUpdateRequest;
+import com.zhy.auraojbackend.model.dto.user.response.UserLoginResponse;
 import com.zhy.auraojbackend.model.vo.UserInfoVO;
 import com.zhy.auraojbackend.service.MinioService;
 import com.zhy.auraojbackend.service.UserInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,8 +46,6 @@ public class UserManagerController {
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册接口")
     @SaIgnore
-    @ApiResponse(responseCode = "200", description = "注册成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     public Result<Long> userRegister(
             @Parameter(description = "注册请求参数") @RequestBody UserRegisterRequest userRegisterRequest,
             HttpServletRequest request) {
@@ -68,8 +63,6 @@ public class UserManagerController {
     @PostMapping("/login")
     @Operation(summary = "用户登录", description = "用户登录接口")
     @SaIgnore
-    @ApiResponse(responseCode = "200", description = "登录成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     public Result<UserLoginResponse> userLogin(
             @Parameter(description = "登录请求参数") @RequestBody UserLoginRequest userLoginRequest,
             HttpServletRequest request) {
@@ -87,8 +80,6 @@ public class UserManagerController {
     @PostMapping("/logout")
     @Operation(summary = "用户登出", description = "用户登出接口")
     @SaIgnore
-    @ApiResponse(responseCode = "200", description = "登出成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     public Result<Boolean> userLogout(HttpServletRequest request) {
         try {
             boolean result = userInfoService.userLogout();
@@ -103,8 +94,6 @@ public class UserManagerController {
 
     @GetMapping("/current")
     @Operation(summary = "获取当前用户", description = "获取当前登录用户信息")
-    @ApiResponse(responseCode = "200", description = "获取成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<UserInfoVO> getCurrentUser(HttpServletRequest request) {
         try {
@@ -120,8 +109,6 @@ public class UserManagerController {
 
     @PostMapping("/update")
     @Operation(summary = "更新当前用户信息", description = "更新当前登录用户的基本信息")
-    @ApiResponse(responseCode = "200", description = "更新成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<UserInfoVO> updateCurrentUser(
             @Parameter(description = "用户信息更新参数") @RequestBody UserUpdateRequest userUpdateRequest,
@@ -139,8 +126,6 @@ public class UserManagerController {
 
     @PostMapping("/admin/{userId}/update")
     @Operation(summary = "管理员更新指定用户信息", description = "更新指定用户的基本信息")
-    @ApiResponse(responseCode = "200", description = "更新成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
     public Result<UserInfoVO> updateCurrentUser(
             @Parameter(description = "目标用户 ID", required = true) @PathVariable Long userId,
@@ -159,8 +144,6 @@ public class UserManagerController {
 
     @GetMapping("/admin/list")
     @Operation(summary = "获取所有用户信息（分页）", description = "管理员和教师分页获取系统中所有用户的信息列表")
-    @ApiResponse(responseCode = "200", description = "获取成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
     public Result<PageResponse<UserInfoVO>> getAllUsers(
             @Parameter(description = "页码，默认 1") @RequestParam(defaultValue = "1") Integer pageNum,
@@ -183,8 +166,6 @@ public class UserManagerController {
 
     @DeleteMapping("/admin/{userId}/deleteUser")
     @Operation(summary = "删除用户", description = "管理员删除指定用户（软删除，将状态设置为封禁）")
-    @ApiResponse(responseCode = "200", description = "删除成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckRole(value = {"teacher", "admin"}, mode = SaMode.OR)
     public Result<Boolean> deleteUser(
             @Parameter(description = "目标用户 ID", required = true) @PathVariable Long userId,
@@ -202,8 +183,6 @@ public class UserManagerController {
 
     @PostMapping("/updateUserAvatar")
     @Operation(summary = "上传用户头像", description = "上传当前登录用户的头像图片")
-    @ApiResponse(responseCode = "200", description = "上传成功",
-            content = @Content(schema = @Schema(implementation = Result.class)))
     @SaCheckLogin
     public Result<UserInfoVO> updateUserAvatar(
             @Parameter(description = "目标用户 ID", required = true) @RequestParam("userId") Long userId,

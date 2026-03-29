@@ -1,26 +1,27 @@
 package com.zhy.auraojbackend.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.exception.BusinessException;
 import com.zhy.auraojbackend.exception.ThrowUtils;
+import com.zhy.auraojbackend.manager.FileManager;
 import com.zhy.auraojbackend.mapper.ProblemMapper;
 import com.zhy.auraojbackend.model.dto.PageRequest;
 import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.problem.BaseProblemInfo;
 import com.zhy.auraojbackend.model.dto.problem.request.ProblemAddRequest;
+import com.zhy.auraojbackend.model.dto.problem.request.ProblemUpdateRequest;
 import com.zhy.auraojbackend.model.dto.problem.request.SearchProblemsRequest;
 import com.zhy.auraojbackend.model.dto.problem.response.QueryAllProblemResponse;
+import com.zhy.auraojbackend.model.entity.JudgeConfig;
 import com.zhy.auraojbackend.model.entity.Problem;
 import com.zhy.auraojbackend.model.entity.ProblemTagMap;
 import com.zhy.auraojbackend.model.entity.TagInfo;
-import com.zhy.auraojbackend.service.ProblemFileService;
 import com.zhy.auraojbackend.service.ProblemService;
 import com.zhy.auraojbackend.service.ProblemTagMapService;
 import com.zhy.auraojbackend.service.TagService;
@@ -32,9 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
 * @author zhy
@@ -49,11 +49,9 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
     @Resource
     private ProblemTagMapService problemTagMapService;
     @Resource
-    private ProblemFileService problemFileService;
+    private FileManager fileManager;
     @Resource
     private TagService tagService;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -68,6 +66,7 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         // 2. 构建 Problem 实体
         Problem problem = new Problem();
         problem.setTitle(problemAddRequest.getTitle());
+        problem.setStatus(problemAddRequest.getStatus());
         problem.setDescription(problemAddRequest.getDescription());
         problem.setInputDesc(problemAddRequest.getInputDesc());
         problem.setOutputDesc(problemAddRequest.getOutputDesc());
@@ -78,18 +77,10 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         problem.setCreatorId(StpUtil.getLoginIdAsLong());
         
         // 构建判题配置 JSON
-        Map<String, Object> judgeConfigMap = new HashMap<>();
-        judgeConfigMap.put("timeLimit", problemAddRequest.getTimeLimit());
-        judgeConfigMap.put("memoryLimit", problemAddRequest.getMemoryLimit());
-        try {
-            problem.setJudgeConfig(objectMapper.writeValueAsString(judgeConfigMap));
-        } catch (JsonProcessingException e) {
-            log.error("判题配置 JSON 序列化失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "判题配置序列化失败：" + e.getMessage());
-        }
-        
-        // 设置默认状态为公开
-        problem.setStatus(1);
+        JudgeConfig judgeConfig = new JudgeConfig();
+        judgeConfig.setTimeLimit(problemAddRequest.getTimeLimit());
+        judgeConfig.setMemoryLimit(problemAddRequest.getMemoryLimit());
+        problem.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
         
         // 3. 保存到数据库
         boolean result = this.save(problem);
@@ -98,7 +89,7 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         log.info("新增题目成功，题目 ID: {}", problem.getId());
 
         // 4. 保存样例输入输出文件
-        problemFileService.saveSampleFiles(
+        fileManager.saveSampleFiles(
                 problem.getId(),
                 problemAddRequest.getSampleInput(),
                 problemAddRequest.getSampleOutput()
@@ -116,6 +107,97 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
             }
         }
         return problem.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Problem updateProblem(ProblemUpdateRequest problemUpdateRequest) {
+        try {
+            problemUpdateRequest.check();
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, e.getMessage());
+        }
+
+        Problem existProblem = this.getById(problemUpdateRequest.getId());
+        ThrowUtils.throwIf(existProblem == null, ErrorCode.RESOURCE_NO_PROBLEM, "题目不存在");
+
+        Problem updateProblem = new Problem();
+        updateProblem.setId(problemUpdateRequest.getId());
+
+        if (StringUtils.isNotBlank(problemUpdateRequest.getTitle())) {
+            updateProblem.setTitle(problemUpdateRequest.getTitle());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getDescription())) {
+            updateProblem.setDescription(problemUpdateRequest.getDescription());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getInputDesc())) {
+            updateProblem.setInputDesc(problemUpdateRequest.getInputDesc());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getOutputDesc())) {
+            updateProblem.setOutputDesc(problemUpdateRequest.getOutputDesc());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getDataScope())) {
+            updateProblem.setDataScope(problemUpdateRequest.getDataScope());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getSampleInput())) {
+            updateProblem.setSampleInput(problemUpdateRequest.getSampleInput());
+        }
+        if (StringUtils.isNotBlank(problemUpdateRequest.getSampleOutput())) {
+            updateProblem.setSampleOutput(problemUpdateRequest.getSampleOutput());
+        }
+        if (problemUpdateRequest.getDifficulty() != null) {
+            updateProblem.setDifficulty(problemUpdateRequest.getDifficulty());
+        }
+        if (problemUpdateRequest.getStatus() != null) {
+            updateProblem.setStatus(problemUpdateRequest.getStatus());
+        }
+
+        Integer timeLimit = problemUpdateRequest.getTimeLimit();
+        Integer memoryLimit = problemUpdateRequest.getMemoryLimit();
+        if (timeLimit != null || memoryLimit != null) {
+            JudgeConfig judgeConfig = JSONUtil.toBean(existProblem.getJudgeConfig(), JudgeConfig.class);
+            if (judgeConfig == null) {
+                judgeConfig = new JudgeConfig();
+            }
+            if (timeLimit != null) {
+                judgeConfig.setTimeLimit(timeLimit);
+            }
+            if (memoryLimit != null) {
+                judgeConfig.setMemoryLimit(memoryLimit);
+            }
+            updateProblem.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
+        }
+
+        boolean updateResult = this.updateById(updateProblem);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.SYSTEM_ERROR, "更新题目失败");
+
+        if (problemUpdateRequest.getTagIds() != null) {
+            LambdaQueryWrapper<ProblemTagMap> mapQueryWrapper = new LambdaQueryWrapper<>();
+            mapQueryWrapper.eq(ProblemTagMap::getProblemId, problemUpdateRequest.getId());
+            boolean removeMapResult = problemTagMapService.remove(mapQueryWrapper);
+            ThrowUtils.throwIf(!removeMapResult, ErrorCode.SYSTEM_ERROR, "更新题目标签关联失败");
+
+            if (CollectionUtils.isNotEmpty(problemUpdateRequest.getTagIds())) {
+                for (Long tagId : problemUpdateRequest.getTagIds()) {
+                    ProblemTagMap problemTagMap = ProblemTagMap.builder()
+                            .problemId(problemUpdateRequest.getId())
+                            .tagId(tagId)
+                            .build();
+                    problemTagMapService.save(problemTagMap);
+                }
+            }
+        }
+
+        if (problemUpdateRequest.getSampleInput() != null || problemUpdateRequest.getSampleOutput() != null) {
+            String sampleInput = problemUpdateRequest.getSampleInput() != null
+                    ? problemUpdateRequest.getSampleInput() : existProblem.getSampleInput();
+            String sampleOutput = problemUpdateRequest.getSampleOutput() != null
+                    ? problemUpdateRequest.getSampleOutput() : existProblem.getSampleOutput();
+            fileManager.saveSampleFiles(problemUpdateRequest.getId(), sampleInput, sampleOutput);
+        }
+
+        log.info("更新题目成功，题目 ID: {}", problemUpdateRequest.getId());
+        return this.getById(problemUpdateRequest.getId());
     }
 
     @Override
@@ -217,9 +299,42 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         // 3. 查询关联标签信息
         List<TagInfo> tagList = getTagListByProblemId(problemId);
         baseProblemInfo.setTags(tagList);
-        
+
+        // 4. 解析题目运行配置
+        String judgeConfigStr = problem.getJudgeConfig();
+        JudgeConfig judgeConfig = JSONUtil.toBean(judgeConfigStr, JudgeConfig.class);
+        baseProblemInfo.setTimeLimit(judgeConfig.getTimeLimit());
+        baseProblemInfo.setMemoryLimit(judgeConfig.getMemoryLimit());
+
         log.info("查询题目详情成功，题目 ID: {}", problemId);
         return baseProblemInfo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteProblem(Long problemId) {
+        ThrowUtils.throwIf(problemId == null, ErrorCode.BAD_PARAMS, "题目 ID 不能为空");
+
+        Problem existProblem = this.getById(problemId);
+        ThrowUtils.throwIf(existProblem == null, ErrorCode.RESOURCE_NO_PROBLEM, "题目不存在");
+
+        LambdaQueryWrapper<ProblemTagMap> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ProblemTagMap::getProblemId, problemId);
+        long count = problemTagMapService.count(queryWrapper);
+
+        if (count > 0) {
+            log.info("题目 {} 存在关联标签，删除关联标签", existProblem.getTitle());
+            LambdaQueryWrapper<ProblemTagMap> mapQueryWrapper = new LambdaQueryWrapper<>();
+            mapQueryWrapper.eq(ProblemTagMap::getProblemId, problemId);
+            boolean removeMapResult = problemTagMapService.remove(mapQueryWrapper);
+            ThrowUtils.throwIf(!removeMapResult, ErrorCode.SYSTEM_ERROR, "删除题目标签关联失败");
+        }
+
+        boolean removeProblemResult = this.removeById(problemId);
+        ThrowUtils.throwIf(!removeProblemResult, ErrorCode.SYSTEM_ERROR, "删除题目失败");
+
+        log.info("删除题目成功，题目 ID: {}", problemId);
+        return true;
     }
 
     /**
@@ -232,6 +347,12 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         // 查询关联标签信息
         List<TagInfo> tagList = getTagListByProblemId(problem.getId());
         response.setTags(tagList);
+
+        // 4. 解析题目运行配置
+        String judgeConfigStr = problem.getJudgeConfig();
+        JudgeConfig judgeConfig = JSONUtil.toBean(judgeConfigStr, JudgeConfig.class);
+        response.setTimeLimit(judgeConfig.getTimeLimit());
+        response.setMemoryLimit(judgeConfig.getMemoryLimit());
 
         return response;
     }
@@ -260,5 +381,44 @@ public class ProblemServiceImpl extends ServiceImpl<ProblemMapper, Problem>
         LambdaQueryWrapper<TagInfo> tagQueryWrapper = new LambdaQueryWrapper<>();
         tagQueryWrapper.in(TagInfo::getId, tagIds);
         return tagService.list(tagQueryWrapper);
+    }
+
+    @Override
+    public List<QueryAllProblemResponse> listProblemsByTagId(Long tagId) {
+        log.info("根据标签 ID 查询所有关联题目，tagId: {}", tagId);
+
+        ThrowUtils.throwIf(tagId == null, ErrorCode.BAD_PARAMS, "标签 ID 不能为空");
+
+        // 1. 检查标签是否存在
+        TagInfo tag = tagService.getById(tagId);
+        ThrowUtils.throwIf(tag == null, ErrorCode.RESOURCE_NO_TAG, "标签不存在");
+
+        // 2. 通过 ProblemTagMap 查询所有关联的 problemId
+        LambdaQueryWrapper<ProblemTagMap> mapQueryWrapper = new LambdaQueryWrapper<>();
+        mapQueryWrapper.eq(ProblemTagMap::getTagId, tagId);
+        List<ProblemTagMap> problemTagMaps = problemTagMapService.list(mapQueryWrapper);
+
+        if (CollectionUtils.isEmpty(problemTagMaps)) {
+            log.info("该标签下没有关联题目，tagId: {}", tagId);
+            return Collections.emptyList();
+        }
+
+        // 3. 提取所有的 problemId
+        List<Long> problemIds = problemTagMaps.stream()
+                .map(ProblemTagMap::getProblemId)
+                .collect(Collectors.toList());
+
+        // 4. 根据 problemId 查询题目信息
+        LambdaQueryWrapper<Problem> problemQueryWrapper = new LambdaQueryWrapper<>();
+        problemQueryWrapper.in(Problem::getId, problemIds);
+        List<Problem> problems = this.list(problemQueryWrapper);
+
+        // 5. 转换为 QueryAllProblemResponse 对象
+        List<QueryAllProblemResponse> responseList = problems.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        log.info("根据标签 ID 查询题目成功，tagId: {}, 题目数量：{}", tagId, responseList.size());
+        return responseList;
     }
 }
