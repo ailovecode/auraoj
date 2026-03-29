@@ -69,7 +69,8 @@ public class RestTemplateConfig {
                 // 禁用自动关闭连接，复用连接池
                 .disableContentCompression()
                 // 保持长连接
-                .setKeepAliveStrategy((response, context) -> TimeValue.ofDays(60000)) // 60 秒
+                .setKeepAliveStrategy((response, context) -> TimeValue.ofSeconds(60))
+                // 60 秒
                 .build();
     }
 }
