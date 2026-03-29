@@ -29,30 +29,39 @@ public class JudgeDispatcher {
     public void sendTask(Long submissionId, Long problemId, Boolean isContest) {
         JSONObject task = new JSONObject();
         task.put("submissionId", submissionId);
+        task.put("problemId", problemId);
         task.put("isContest", isContest);
         try {
-            boolean isOk;
+            long queueSize;
+            String queueName;
             if (Boolean.TRUE.equals(isContest)) {
-                isOk = redisUtils.llPush(Constants.Queue.CONTEST_JUDGE_WAITING.getName(), task);
+                queueName = Constants.Queue.CONTEST_JUDGE_WAITING.getName();
+                queueSize = redisUtils.llPushWithResult(queueName, task);
             } else {
-                isOk = redisUtils.llPush(Constants.Queue.GENERAL_JUDGE_WAITING.getName(), task);
+                queueName = Constants.Queue.GENERAL_JUDGE_WAITING.getName();
+                queueSize = redisUtils.llPushWithResult(queueName, task);
             }
-            if (!isOk) {
+            
+            if (queueSize < 0) {
+                log.error("注入判题队列失败：submissionId={}", submissionId);
                 submissionService.updateById(new Submission()
                         .setId(submissionId)
                         .setStatus(SubmissionStatusEnum.SUBMITTED_FAILED)
                         .setErrorMessage("注入缓存队列失败，请重新提交！"));
+                return;
             }
-            // 处理缓存队列
+            
+            log.info("成功注入判题队列：submissionId={}, queue={}, size={}", 
+                    submissionId, queueName, queueSize);
+            
+            // 触发处理缓存队列
             judgeReceiver.processWaitingTask();
         } catch (Exception e) {
-            log.error("判题服务异常：{}", e.getMessage());
+            log.error("判题服务异常：submissionId={}, error={}", submissionId, e.getMessage(), e);
             submissionService.updateById(new Submission()
                     .setId(submissionId)
                     .setStatus(SubmissionStatusEnum.SUBMITTED_FAILED)
                     .setErrorMessage("判题服务异常，请重新提交！"));
-            // todo: 同步更新比赛提交记录
-
         }
     }
 }

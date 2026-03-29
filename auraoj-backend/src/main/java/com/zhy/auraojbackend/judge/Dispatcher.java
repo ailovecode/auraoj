@@ -29,6 +29,7 @@ public class Dispatcher {
     @Resource
     private SubmissionService submissionService;
 
+    @Resource
     private RestTemplate restTemplate;
 
     // 每个提交任务尝试300次失败则判为提交失败
@@ -57,11 +58,10 @@ public class Dispatcher {
 
     /**
      * 普通评测
-     * @param data
-     * @param path
+     * @param data 判题数据
+     * @param path 判题接口路径
      */
     public void defaultJudge(ToJudgeDTO data, String path) {
-
         Long submitId = data.getSubmission().getId();
         AtomicInteger count = new AtomicInteger(0);
         String taskKey = UUID.randomUUID().toString() + submitId;
@@ -75,14 +75,17 @@ public class Dispatcher {
             count.getAndIncrement();
             Result result = null;
             try {
+                // 使用连接池优化的 RestTemplate 发送请求
                 result = restTemplate.postForObject(Constants.JUDGE_SERVER_URL + path, data, Result.class);
+                log.debug("判题请求成功：submitId={}, taskKey={}", submitId, taskKey);
             } catch (Exception e) {
-                log.error("判题服务连接失败，请重新提交或联系管理员！");
+                log.error("判题服务连接失败，请重新提交或联系管理员！submitId={}, taskKey={}", submitId, taskKey, e);
             } finally {
                 checkResult(result, submitId);
                 releaseTaskThread(taskKey);
             }
         };
+        // 每 2 秒轮询一次判题机
         ScheduledFuture<?> scheduledFuture = SCHEDULER.scheduleWithFixedDelay(getResultTask, 0, 2, TimeUnit.SECONDS);
         FUTURE_TASK_MAP.put(taskKey, scheduledFuture);
     }
@@ -91,12 +94,13 @@ public class Dispatcher {
         Submission submission = new Submission();
         if (result == null) {
             // 调用失败
-            submission.setProblemId(submitId);
+            submission.setId(submitId);
             submission.setStatus(SubmissionStatusEnum.SUBMITTED_FAILED);
             submission.setErrorMessage("判题服务连接失败，请重新提交或联系管理员！");
             submissionService.updateById(submission);
         } else {
             if (result.getCode() != ErrorCode.SUCCESS.getCode()) {
+                submission.setId(submitId);
                 submission.setStatus(SubmissionStatusEnum.SYSTEM_ERROR);
                 submission.setErrorMessage(result.getMessage());
                 submissionService.updateById(submission);

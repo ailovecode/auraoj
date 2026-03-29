@@ -119,10 +119,11 @@ public class RedisUtils {
     }
 
     /**
-     * 将list左边放入缓存
+     * 将 list 左边放入缓存
      *
      * @param key   键
      * @param value 值
+     * @return 是否成功
      */
     public boolean llPush(String key, Object value) {
         try {
@@ -131,6 +132,23 @@ public class RedisUtils {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    
+    /**
+     * 将 list 左边放入缓存（返回实际结果）
+     *
+     * @param key   键
+     * @param value 值
+     * @return 操作后的列表长度，失败返回 -1
+     */
+    public long llPushWithResult(String key, Object value) {
+        try {
+            Long size = redisTemplate.opsForList().leftPush(key, value);
+            return size != null ? size : -1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
         }
     }
 

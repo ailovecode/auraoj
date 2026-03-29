@@ -43,6 +43,7 @@ logging:
       springframework:
         boot:
           autoconfigure: ERROR
+  config: classpath:logback-spring.xml
 
 ############## Sa-Token 配置 ##############
 sa-token:

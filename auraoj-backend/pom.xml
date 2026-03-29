@@ -23,6 +23,7 @@
         <minio.version>8.4.3</minio.version>
         <fastjson2.version>2.0.43</fastjson2.version>
         <hutool.version>5.8.10</hutool.version>
+        <httpclient5.version>5.3</httpclient5.version>
     </properties>
 
     <dependencies>
@@ -119,6 +120,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+
+        <!-- Apache HttpClient 5 for RestTemplate 连接池优化 -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${httpclient5.version}</version>
         </dependency>
     </dependencies>
 

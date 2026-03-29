@@ -17,4 +17,6 @@ public class ToJudgeDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Submission submission;
+
+    private Boolean isContest;
 }
