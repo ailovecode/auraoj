@@ -86,8 +86,7 @@ public class JudgeReceiver extends AbstractReceiver {
                 
                 // 调用评测服务分发任务
                 ToJudgeDTO toJudgeDTO = new ToJudgeDTO()
-                        .setSubmission(submission)
-                        .setIsContest(submission.getContestId() != null);
+                        .setSubmission(submission);
                 
                 dispatcher.dispatch(Constants.TaskType.JUDGE, toJudgeDTO);
             }

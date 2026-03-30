@@ -16,7 +16,13 @@ import java.io.Serializable;
 public class ToJudgeDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    /**
+     *  提交记录
+     */
     private Submission submission;
 
-    private Boolean isContest;
+    /**
+     *  调用评测验证的token
+     */
+    private String token;
 }
