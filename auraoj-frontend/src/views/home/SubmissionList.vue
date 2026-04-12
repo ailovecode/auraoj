@@ -18,7 +18,7 @@ import {
 import { IconRefresh, IconSearch } from '@arco-design/web-vue/es/icon'
 import { getSubmissionInfo } from '@/api/judge'
 import type { ShowSubmissionRequest, ShowSubmissionInfo } from '@/types/judge'
-import { formatDate, getLanguageText, getSubmissionStatusInfo, type SubmissionStatusKey } from '@/utils/format'
+import { formatDate, getLanguageText, getSubmissionStatusInfo } from '@/utils/format'
 
 const router = useRouter()
 
@@ -80,7 +80,7 @@ const fetchSubmissionList = async () => {
       params.language = searchForm.value.language
     }
     if (searchForm.value.status) {
-      params.status = searchForm.value.status as SubmissionStatusKey
+      params.status = searchForm.value.status
     }
 
     const res = await getSubmissionInfo(params)

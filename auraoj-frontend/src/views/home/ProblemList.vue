@@ -16,9 +16,11 @@ import type { AdminProblemInfo, ProblemSearchRequest } from '@/types/problem'
 import { listAllTags } from '@/api/tag'
 import type { TagInfo } from '@/types/tagInfo'
 import { getDifficultyText, getDifficultyColor } from '@/utils/format'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(20)
@@ -94,6 +96,11 @@ const handlePageSizeChange = (size: number) => {
 }
 
 const handleProblemClick = (problem: AdminProblemInfo) => {
+  if (!userStore.userInfo?.id) {
+    Message.warning('请先登录！')
+    userStore.requireLogin()
+    return
+  }
   router.push(`/problem/${problem.id}`)
 }
 

@@ -94,6 +94,11 @@ const router = createRouter({
           component: () => import('@/views/admin/TestDataManage.vue')
         },
         {
+          path: 'language',
+          name: 'adminLanguage',
+          component: () => import('@/views/admin/LanguageManage.vue')
+        },
+        {
           path: 'submission',
           name: 'adminSubmission',
           component: {
@@ -132,6 +137,14 @@ router.beforeEach((to, from, next) => {
     } else {
       next()
     }
+  } else if (to.path.startsWith('/problem/')) {
+    // 做题页面需要登录才能访问
+    if (!userStore.token) {
+      Message.warning('请先登录')
+      userStore.requireLogin()
+      // 不阻止访问，让用户在登录后再访问
+    }
+    next()
   } else {
     next()
   }
