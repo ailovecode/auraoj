@@ -8,7 +8,9 @@ import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.submission.ShowSubmissionInfo;
 import com.zhy.auraojbackend.model.dto.submission.request.ShowSubmissionRequest;
 import com.zhy.auraojbackend.model.dto.submission.request.SubmitRequest;
+import com.zhy.auraojbackend.model.dto.submission.request.TestCaseDebugRequest;
 import com.zhy.auraojbackend.model.dto.submission.response.SubmitResponse;
+import com.zhy.auraojbackend.model.dto.submission.response.TestCaseDebugResponse;
 import com.zhy.auraojbackend.service.SubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -74,6 +76,27 @@ public class SubmissionController {
             return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
         } catch (Exception e) {
             log.error("查询提交信息系统错误", e);
+            return Result.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    @PostMapping("/testCaseDebug")
+    @Operation(summary = "在线调试", description = "单测试点即时调试代码，同步返回执行结果")
+    @SaCheckLogin
+    public Result<TestCaseDebugResponse> testCaseDebug(
+            @Parameter(description = "调试请求") @RequestBody TestCaseDebugRequest debugRequest,
+            HttpServletRequest request) {
+        try {
+            TestCaseDebugResponse debugResponse = submissionService.testCaseDebug(debugRequest);
+            return Result.success(debugResponse, "ok");
+        } catch (BusinessException e) {
+            log.error("在线调试业务错误", e);
+            return Result.error(e.getCode(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("在线调试参数错误", e);
+            return Result.error(ErrorCode.BAD_PARAMS.getCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("在线调试系统错误", e);
             return Result.error(ErrorCode.SYSTEM_ERROR);
         }
     }

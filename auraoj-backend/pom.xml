@@ -37,7 +37,7 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         
-        <!-- PostgreSQL数据库（生产环境） -->
+        <!-- PostgreSQL数据库 -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

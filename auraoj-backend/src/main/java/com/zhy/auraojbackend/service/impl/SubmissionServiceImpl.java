@@ -2,7 +2,7 @@ package com.zhy.auraojbackend.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -18,7 +18,9 @@ import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.submission.ShowSubmissionInfo;
 import com.zhy.auraojbackend.model.dto.submission.request.ShowSubmissionRequest;
 import com.zhy.auraojbackend.model.dto.submission.request.SubmitRequest;
+import com.zhy.auraojbackend.model.dto.submission.request.TestCaseDebugRequest;
 import com.zhy.auraojbackend.model.dto.submission.response.SubmitResponse;
+import com.zhy.auraojbackend.model.dto.submission.response.TestCaseDebugResponse;
 import com.zhy.auraojbackend.model.entity.Problem;
 import com.zhy.auraojbackend.model.entity.Submission;
 import com.zhy.auraojbackend.model.entity.UserInfo;
@@ -64,6 +66,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
 
     // 提交频率限制常量
     private static final int SUBMIT_TIME_LIMIT_SECONDS = 10;
+    
+    // 在线调试频率限制常量（秒）
+    private static final int TEST_JUDGE_TIME_LIMIT_SECONDS = 3;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -120,12 +125,14 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         ThrowUtils.throwIf(!updateProblemResult, ErrorCode.SYSTEM_ERROR, "更新提交数量失败");
 
         Submission savedSubmission = this.getById(submission.getId());
-        SubmitResponse submitResponse = new SubmitResponse();
-        BeanUtils.copyProperties(savedSubmission != null ? savedSubmission : submission, submitResponse);
+
         // 异步处理判题任务
         judgeDispatcher.sendTask(savedSubmission.getId(),
                 savedSubmission.getProblemId(),
                 isContestSubmission);
+
+        SubmitResponse submitResponse = new SubmitResponse();
+        BeanUtils.copyProperties(savedSubmission, submitResponse);
 
         return submitResponse;
     }
@@ -142,12 +149,12 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         queryWrapper.eq(showSubmissionRequest.getId() != null, Submission::getId, showSubmissionRequest.getId());
         queryWrapper.eq(showSubmissionRequest.getProblemId() != null, Submission::getProblemId, showSubmissionRequest.getProblemId());
         queryWrapper.eq(showSubmissionRequest.getContestId() != null, Submission::getContestId, showSubmissionRequest.getContestId());
-        queryWrapper.eq(StrUtil.isNotBlank(showSubmissionRequest.getLanguage()), Submission::getLanguage, showSubmissionRequest.getLanguage());
+        queryWrapper.eq(CharSequenceUtil.isNotBlank(showSubmissionRequest.getLanguage()), Submission::getLanguage, showSubmissionRequest.getLanguage());
         queryWrapper.eq(showSubmissionRequest.getStatus() != null, Submission::getStatus, showSubmissionRequest.getStatus());
         queryWrapper.eq(showSubmissionRequest.getPattern() != null, Submission::getPattern, showSubmissionRequest.getPattern());
 
         List<UserInfo> matchedUsers = Collections.emptyList();
-        if (StrUtil.isNotBlank(showSubmissionRequest.getUsername())) {
+        if (CharSequenceUtil.isNotBlank(showSubmissionRequest.getUsername())) {
             LambdaQueryWrapper<UserInfo> userQueryWrapper = new LambdaQueryWrapper<>();
             userQueryWrapper.like(UserInfo::getUsername, showSubmissionRequest.getUsername());
             matchedUsers = userInfoService.list(userQueryWrapper);
@@ -182,7 +189,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     private void fillJudgeInfo(String judgeSummary, ShowSubmissionInfo result) {
-        if (StrUtil.isBlank(judgeSummary) || !JSONUtil.isTypeJSON(judgeSummary)) {
+        if (CharSequenceUtil.isBlank(judgeSummary) || !JSONUtil.isTypeJSON(judgeSummary)) {
             return;
         }
         try {
@@ -232,7 +239,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         }
         if (value instanceof CharSequence charSequence) {
             String text = charSequence.toString().trim();
-            if (StrUtil.isNumeric(text)) {
+            if (CharSequenceUtil.isNumeric(text)) {
                 return Integer.parseInt(text);
             }
         }
@@ -297,5 +304,27 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         result.setCodeLength(code == null ? 0 : code.length());
         fillJudgeInfo(submission.getJudgeSummary(), result);
         return result;
+    }
+
+    @Override
+    public TestCaseDebugResponse testCaseDebug(TestCaseDebugRequest debugRequest) {
+        ThrowUtils.throwIf(debugRequest == null, ErrorCode.BAD_PARAMS, "调试请求为空");
+
+        try {
+            debugRequest.check();
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.BAD_PARAMS, e.getMessage());
+        }
+
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        
+        // 通过 redis 限制用户在线调试频率
+        String lockKey = Constants.Account.TEST_JUDGE_LOCK.getCode() + currentUserId;
+        if (!redisUtils.isWithInRateLimit(lockKey, TEST_JUDGE_TIME_LIMIT_SECONDS)) {
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "调试频率过高，请稍后再试");
+        }
+
+        // 调用判题服务进行在线调试
+        return judgeDispatcher.sendTestCaseDebugTask(debugRequest);
     }
 }
