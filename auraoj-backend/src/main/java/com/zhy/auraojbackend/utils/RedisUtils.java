@@ -1,6 +1,7 @@
 package com.zhy.auraojbackend.utils;
 
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
  * @Date 2026/3/29
  */
 @Component
+@Slf4j
 public class RedisUtils {
 
     @Resource
@@ -153,15 +155,16 @@ public class RedisUtils {
     }
 
     /**
-     * 从 list 中右边弹出一个元素
-     * @param key
-     * @return
+     * 从 list 中右边弹出一个元素（非阻塞）
+     * @param key 键
+     * @return 弹出的元素，列表为空时立即返回 null，不会阻塞
      */
     public Object lrPop(String key) {
         try {
-            return redisTemplate.opsForList().rightPop(key, 10, TimeUnit.SECONDS);
+            // 使用非阻塞的 rightPop，列表为空时立即返回 null
+            return redisTemplate.opsForList().rightPop(key);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("从 Redis 列表中弹出元素失败：key={}, error={}", key, e.getMessage(), e);
             return null;
         }
     }

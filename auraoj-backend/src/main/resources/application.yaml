@@ -14,7 +14,7 @@ spring:
   threads:
     virtual:
       enabled: true
-# Redis 配置
+  # Redis 配置
   data:
     redis:
       host: ${REDIS_HOST:localhost}

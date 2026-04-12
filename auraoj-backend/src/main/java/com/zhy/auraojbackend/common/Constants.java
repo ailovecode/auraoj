@@ -10,7 +10,7 @@ import lombok.Getter;
 public class Constants {
 
     // 判题服务
-    public static final String JUDGE_SERVER_URL = "http://127.0.0.1:5050";
+    public static final String JUDGE_SERVER_URL = "http://127.0.0.1:5000";
 
     /**
      * @Description 账户相关常量
@@ -85,7 +85,7 @@ public class Constants {
         /**
          * 在线调试
          */
-        TEST_JUDGE("/test-judge"),
+        TEST_JUDGE("/testCaseJudge"),
         /**
          * 编译特判程序
          */

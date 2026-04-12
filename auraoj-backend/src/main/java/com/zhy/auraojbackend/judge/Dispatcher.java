@@ -4,7 +4,10 @@ import cn.hutool.core.lang.UUID;
 import com.zhy.auraojbackend.common.Constants;
 import com.zhy.auraojbackend.common.ErrorCode;
 import com.zhy.auraojbackend.common.Result;
+import com.zhy.auraojbackend.model.dto.submission.TestCaseJudgeDTO;
 import com.zhy.auraojbackend.model.dto.submission.ToJudgeDTO;
+import com.zhy.auraojbackend.model.dto.submission.request.TestCaseDebugRequest;
+import com.zhy.auraojbackend.model.dto.submission.response.TestCaseDebugResponse;
 import com.zhy.auraojbackend.model.entity.Submission;
 import com.zhy.auraojbackend.model.enums.SubmissionStatusEnum;
 import com.zhy.auraojbackend.service.SubmissionService;
@@ -48,7 +51,7 @@ public class Dispatcher {
                 defaultJudge((ToJudgeDTO) data, taskType.getPath());
                 break;
             case TEST_JUDGE:
-                // testJudge((TestJudgeReq) data, taskType.getPath());
+                // testJudge 已改为同步调用，不再通过此方法
                 break;
             default:
                 throw new IllegalArgumentException("判题机不支持此调用类型");
@@ -115,6 +118,81 @@ public class Dispatcher {
             if (cancel) {
                 FUTURE_TASK_MAP.remove(taskKey);
             }
+        }
+    }
+
+    /**
+     * 在线调试：同步调用判题服务并返回结果
+     *
+     * @param debugRequest 调试请求
+     * @return 调试结果
+     */
+    public TestCaseDebugResponse testJudge(TestCaseDebugRequest debugRequest) {
+        try {
+            log.info("调用判题服务进行在线调试");
+
+            // 构建判题服务请求 DTO
+            TestCaseJudgeDTO judgeDTO = new TestCaseJudgeDTO()
+                    .setCode(debugRequest.getCode())
+                    .setLanguage(debugRequest.getLanguage())
+                    .setInput(debugRequest.getTestCaseInput())
+                    .setOutput(debugRequest.getExpectedOutput())
+                    .setMaxCpuTime(debugRequest.getMaxCpuTime())
+                    .setMaxMemory(debugRequest.getMaxMemory());
+
+            // 同步调用判题服务
+            String url = Constants.JUDGE_SERVER_URL + Constants.TaskType.TEST_JUDGE.getPath();
+            Result result = restTemplate.postForObject(url, judgeDTO, Result.class);
+
+            if (result == null) {
+                log.error("判题服务返回为空");
+                return TestCaseDebugResponse.builder()
+                        .status(SubmissionStatusEnum.SYSTEM_ERROR.getStatus())
+                        .errorMessage("判题服务无响应")
+                        .build();
+            }
+
+            if (result.getCode() != ErrorCode.SUCCESS.getCode()) {
+                log.error("判题服务返回错误：{}", result.getMessage());
+                return TestCaseDebugResponse.builder()
+                        .status(SubmissionStatusEnum.SYSTEM_ERROR.getStatus())
+                        .errorMessage(result.getMessage())
+                        .build();
+            }
+
+            // 将判题服务返回的结果转换为响应 DTO
+            // 假设判题服务返回的数据结构与 TestCaseDebugResult 一致
+            Object data = result.getData();
+            if (data == null) {
+                return TestCaseDebugResponse.builder()
+                        .status(SubmissionStatusEnum.SYSTEM_ERROR.getStatus())
+                        .errorMessage("判题服务返回数据为空")
+                        .build();
+            }
+
+            // 使用 Hutool 进行对象转换
+            cn.hutool.json.JSONObject jsonResult = cn.hutool.json.JSONUtil.parseObj(data);
+            
+            TestCaseDebugResponse response = TestCaseDebugResponse.builder()
+                    .status(jsonResult.getStr("status"))
+                    .output(jsonResult.getStr("output"))
+                    .stderr(jsonResult.getStr("stderr"))
+                    .compileError(jsonResult.getStr("compileError"))
+                    .timeUsed(jsonResult.getLong("timeUsed"))
+                    .memoryUsed(jsonResult.getLong("memoryUsed"))
+                    .isCorrect(jsonResult.getBool("isCorrect"))
+                    .errorMessage(jsonResult.getStr("errorMessage"))
+                    .build();
+
+            log.info("在线调试完成：status={}", response.getStatus());
+            return response;
+
+        } catch (Exception e) {
+            log.error("在线调试异常：{}", e.getMessage(), e);
+            return TestCaseDebugResponse.builder()
+                    .status(SubmissionStatusEnum.SYSTEM_ERROR.getStatus())
+                    .errorMessage("在线调试异常：" + e.getMessage())
+                    .build();
         }
     }
 }

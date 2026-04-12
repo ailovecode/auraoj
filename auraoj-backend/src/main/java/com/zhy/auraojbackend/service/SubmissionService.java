@@ -5,7 +5,9 @@ import com.zhy.auraojbackend.model.dto.PageResponse;
 import com.zhy.auraojbackend.model.dto.submission.ShowSubmissionInfo;
 import com.zhy.auraojbackend.model.dto.submission.request.ShowSubmissionRequest;
 import com.zhy.auraojbackend.model.dto.submission.request.SubmitRequest;
+import com.zhy.auraojbackend.model.dto.submission.request.TestCaseDebugRequest;
 import com.zhy.auraojbackend.model.dto.submission.response.SubmitResponse;
+import com.zhy.auraojbackend.model.dto.submission.response.TestCaseDebugResponse;
 import com.zhy.auraojbackend.model.entity.Submission;
 
 /**
@@ -30,5 +32,13 @@ public interface SubmissionService extends IService<Submission> {
      * @return paged submission list
      */
     PageResponse<ShowSubmissionInfo> getSubmissionInfo(ShowSubmissionRequest showSubmissionRequest);
+
+    /**
+     * 在线调试：单测试点即时执行代码并返回结果
+     *
+     * @param debugRequest 调试请求
+     * @return 调试结果
+     */
+    TestCaseDebugResponse testCaseDebug(TestCaseDebugRequest debugRequest);
 
 }

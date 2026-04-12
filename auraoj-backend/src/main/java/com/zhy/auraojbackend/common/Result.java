@@ -1,6 +1,8 @@
 package com.zhy.auraojbackend.common;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -10,6 +12,8 @@ import java.io.Serializable;
  * @Date 2026/3/1 11:52
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Result<T> implements Serializable {
 
     private int code;
@@ -18,12 +22,6 @@ public class Result<T> implements Serializable {
     private T data;
 
     private String message;
-
-    public Result(int code, T data, String message) {
-        this.code = code;
-        this.data = data;
-        this.message = message;
-    }
 
     public Result(int code, T data) {
         this(code, data, "");
