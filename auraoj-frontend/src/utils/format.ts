@@ -97,20 +97,33 @@ export const getLanguageText = (language: string): string => {
 }
 
 export const SUBMISSION_STATUS = {
-  'Pending': { color: 'gray', description: 'Pending' },
-  'Accepted': { color: 'green', description: 'Accepted' },
-  'Wrong Answer': { color: 'red', description: 'Wrong Answer' },
-  'Compile Error': { color: 'orange', description: 'Compile Error' },
-  'Runtime Error': { color: 'gold', description: 'Runtime Error' },
-  'Time Limit Exceeded': { color: 'cyan', description: 'Time Limit Exceeded' },
-  'Memory Limit Exceeded': { color: 'purple', description: 'Memory Limit Exceeded' },
-  'Presentation Error': { color: 'pink', description: 'Presentation Error' },
-  'Output Limit Exceeded': { color: 'magenta', description: 'Output Limit Exceeded' },
-  'Dangerous Operation': { color: 'brown', description: 'Dangerous Operation' },
-  'System Error': { color: 'default', description: 'System Error' },
-  'Submitted Failed': { color: 'red', description: 'Submitted Failed' },
-  'Canceled': { color: 'gray', description: 'Canceled' }
-} as const
+  // --- 终态：成功 ---
+  'Accepted': { color: '#52c41a', description: 'Accepted' }, // 成功绿
+
+  // --- 终态：逻辑/运行错误 ---
+  'Wrong Answer': { color: '#ff4d4f', description: 'Wrong Answer' }, // 逻辑错误红
+  'Presentation Error': { color: '#fa8c16', description: 'Presentation Error' }, // 格式错误橙
+
+  // --- 终态：资源超限 ---
+  'Time Limit Exceeded': { color: '#13c2c2', description: 'Time Limit Exceeded' }, // 运行超时青
+  'Memory Limit Exceeded': { color: '#722ed1', description: 'Memory Limit Exceeded' }, // 内存溢出紫
+  'Output Limit Exceeded': { color: '#eb2f96', description: 'Output Limit Exceeded' }, // 输出超限品红
+
+  // --- 终态：执行异常 ---
+  'Runtime Error': { color: '#faad14', description: 'Runtime Error' }, // 运行崩溃金
+  'Compile Error': { color: '#d4b106', description: 'Compile Error' }, // 编译失败黄
+  'Dangerous Operation': { color: '#820014', description: 'Dangerous Operation' }, // 危险操作深红
+
+  // --- 中间态：处理中 ---
+  'Pending': { color: '#bfbfbf', description: 'Pending' }, // 等待中灰色
+  'Compiling': { color: '#1890ff', description: 'Compiling' }, // 编译中蓝色
+  'Judging': { color: '#1890ff', description: 'Judging' }, // 评测中蓝色
+
+  // --- 异常状态 ---
+  'System Error': { color: '#262626', description: 'System Error' }, // 系统故障黑
+  'Submitted Failed': { color: '#595959', description: 'Submitted Failed' }, // 提交失败深灰
+  'Canceled': { color: '#d9d9d9', description: 'Canceled' } // 已取消淡灰
+} as const;
 
 export type SubmissionStatusKey = keyof typeof SUBMISSION_STATUS
 

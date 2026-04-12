@@ -1,4 +1,5 @@
-import type { DeleteProblemCaseFileRequest, ProblemCaseDeleteResponse, ProblemCaseFileResponse, Result, RenameTestDataRequest, SingleProblemCaseUploadRequest } from '@/types/testData'
+import type { Result } from '@/types/common'
+import type { DeleteProblemCaseFileRequest, ProblemCaseDeleteResponse, ProblemCaseFileResponse, RenameTestDataRequest, SingleProblemCaseUploadRequest } from '@/types/testData'
 import request from '@/utils/request'
 
 // 获取测试数据列表

@@ -104,7 +104,7 @@ const handleLogin = async () => {
   }
 }
 
-const handleCancel = () => {
+const handleMaskClick = () => {
   emit('update:visible', false)
   loginData.value = { username: '', password: '' }
 }
@@ -162,8 +162,8 @@ const resetRegisterForm = () => {
 
 <template>
   <div>
-    <Modal :visible="visible" title="登录 AuraOJ" @ok="handleLogin" @cancel="handleCancel" :footer="false"
-      :closable="false" :mask-closable="false">
+    <Modal :visible="visible" title="登录 AuraOJ" @ok="handleLogin" @cancel="handleMaskClick" :closable="true"
+      :mask-closable="true" @mask-click="handleMaskClick">
       <Form ref="loginFormRef" :model="loginData" :rules="loginRules">
         <FormItem field="username" label="用户名">
           <Input v-model="loginData.username" placeholder="请输入用户名/邮箱/手机号" :prefix-icon="IconUser" size="large" />
@@ -187,7 +187,7 @@ const resetRegisterForm = () => {
     </Modal>
 
     <Modal :visible="registerModalVisible" title="注册 AuraOJ" @ok="handleRegister" @cancel="handleRegisterCancel"
-      :footer="false" :closable="false" :mask-closable="false" width="480">
+      :footer="false" :closable="true" :mask-closable="true" width="480">
       <Form ref="registerFormRef" :model="registerData" :rules="registerRules" layout="vertical">
         <FormItem field="username" label="用户名">
           <Input v-model="registerData.username" placeholder="请输入用户名（3-20个字符）" size="large" />

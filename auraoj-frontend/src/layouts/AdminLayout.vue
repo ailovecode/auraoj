@@ -18,7 +18,8 @@ import {
   IconExport,
   IconMenuFold,
   IconMenuUnfold,
-  IconHome
+  IconHome,
+  IconCode
 } from '@arco-design/web-vue/es/icon'
 
 const router = useRouter()
@@ -81,6 +82,12 @@ const goToHome = () => {
             <IconFile />
           </template>
           题目管理
+          </MenuItem>
+          <MenuItem key="/admin/language">
+          <template #icon>
+            <IconCode />
+          </template>
+          语言管理
           </MenuItem>
           <MenuItem key="/admin/submission">
           <template #icon>

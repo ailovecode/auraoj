@@ -43,7 +43,6 @@ const initChart = () => {
         type: 'line',
         smooth: true,
         stack: 'Total',
-        areaStyle: {},
         data: [3200, 3100, 3400, 3000, 2800, 2600, 2500],
         itemStyle: {
           color: '#86e8ab'
@@ -60,7 +59,6 @@ const initChart = () => {
         type: 'line',
         smooth: true,
         stack: 'Total',
-        areaStyle: {},
         data: [1800, 1750, 1900, 1700, 1600, 1500, 1450],
         itemStyle: {
           color: '#73c0de'

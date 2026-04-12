@@ -10,7 +10,7 @@ export interface ShowSubmissionRequest {
   problemId?: number;
   contestId?: number;
   language?: string;
-  status?: StatusKey;
+  status?: string;
   pattern?: number;
 }
 

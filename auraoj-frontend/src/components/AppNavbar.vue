@@ -27,7 +27,6 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const loginModalVisible = ref(false)
 const isLoggedIn = computed(() => !!userStore.token)
 const isLoggingOut = ref(false)
 const canAccessAdmin = computed(() => {
@@ -37,6 +36,15 @@ const canAccessAdmin = computed(() => {
 
 // 菜单点击跳转
 const handleMenuClick = (key: string) => {
+  // 访问提交记录页面需要登录
+  if (key === '/submission' && !isLoggedIn.value) {
+    Message.warning('请先登录！')
+    // 清除历史用户状态
+    userStore.logout()
+    // 弹出登录框
+    userStore.showLoginModal = true
+    return
+  }
   router.push(key)
 }
 
@@ -142,7 +150,7 @@ const handleSelect = async (value: any) => {
           </template>
 
           <template v-else>
-            <Button type="primary" shape="round" @click="loginModalVisible = true">
+            <Button type="primary" shape="round" @click="userStore.showLoginModal = true">
               登录 / 注册
             </Button>
           </template>
@@ -150,7 +158,7 @@ const handleSelect = async (value: any) => {
       </div>
     </div>
 
-    <LoginModal v-model:visible="loginModalVisible" />
+    <LoginModal v-model:visible="userStore.showLoginModal" />
   </div>
 </template>
 
